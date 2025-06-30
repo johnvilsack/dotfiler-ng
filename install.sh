@@ -4,7 +4,7 @@
 set -euo pipefail
 
 INSTALL_DIR="${1:-$HOME/.local/bin}"
-REPO_URL="https://github.com/johnvilsack/dotfiles"
+REPO_URL="https://github.com/johnvilsack/dotfiler"
 
 echo "Installing dotfiler to $INSTALL_DIR..."
 
