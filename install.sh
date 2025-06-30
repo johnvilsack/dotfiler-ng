@@ -24,10 +24,7 @@ echo "Creating install directory..."
 mkdir -p "$INSTALL_DIR"
 
 # Copy files
-echo "Copying files to $INSTALL_DIR..."
-cp /tmp/dotfiler/dotfiler "$INSTALL_DIR/"
-echo "Copying dotfiler-lib to $INSTALL_DIR..."
-cp -rf /tmp/dotfiler/dotfiler-lib "$INSTALL_DIR/"
+cp dotfiler/dotfiler "$INSTALL_DIR/" && cp -rf dotfiler/dotfiler-lib "$INSTALL_DIR/"
 echo "Make X to $INSTALL_DIR..."
 chmod +x "$INSTALL_DIR/dotfiler"
 
