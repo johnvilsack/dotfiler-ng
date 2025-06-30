@@ -22,7 +22,7 @@ fi
 mkdir -p "$INSTALL_DIR"
 
 # Copy files
-cp dotfiler/dotfiler "$INSTALL_DIR/" && cp -rf dotfiler/dotfiler-lib "$INSTALL_DIR/"
+cp /tmp/dotfiler/dotfiler "$INSTALL_DIR/" && cp -rf /tmp/dotfiler/dotfiler-lib "$INSTALL_DIR/"
 chmod +x "$INSTALL_DIR/dotfiler"
 
 # Cleanup
