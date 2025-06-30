@@ -59,12 +59,6 @@ cmd_add() {
     dest_dir="$(dirname "$dest_path")"
     mkdir -p "$dest_dir"
     
-    # Remove destination if it already exists to avoid nested copying
-    if [[ -e "$dest_path" ]]; then
-        echo "[INFO] Removing existing: $dest_path"
-        rm -rf "$dest_path"
-    fi
-    
     # Copy the file or directory
     cp -r "$source_path" "$dest_path"
     
