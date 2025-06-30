@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# dotfiler - Main executable
+
+set -euo pipefail
+TRACKEDFOLDERLIST="$DOTFILESPATH/$OS/tracked-folders.txt"
+
+# Determine script directory and lib path
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$(dirname "$SCRIPT_DIR")/bin/dotfiler-lib"
+
+# Source library files
+source "$LIB_DIR/common.sh"
+source "$LIB_DIR/add.sh"
+source "$LIB_DIR/build.sh"
+source "$LIB_DIR/list.sh"
+source "$LIB_DIR/newsync.sh"
+source "$LIB_DIR/sync.sh"
+
+# Version and metadata
+VERSION="1.0.9"
+PROGRAM_NAME="dotfiler"
+
+# Help function
+show_help() {
+    cat << EOF
+$PROGRAM_NAME v$VERSION - Simple dotfiles management
+
+USAGE:
+    $PROGRAM_NAME <command> [options]
+
+COMMANDS:
+    add, a <file>     Add a file or directory to dotfiles
+    build, b         Build dotfiles by linking all tracked files
+    sync, s           Link all dotfiles to their destinations
+    list, l           List all tracked dotfiles
+    version           Show version information
+    help, -h, --help  Show this help message
+
+EXAMPLES:
+    $PROGRAM_NAME add .zshrc
+    $PROGRAM_NAME add ~/.config/nvim
+    $PROGRAM_NAME list
+    $PROGRAM_NAME sync
+    $PROGRAM_NAME build
+
+ENVIRONMENT:
+    DOTFILESPATH
+    TRACKEDFOLDERLIST
+
+For more information, visit: https://github.com/johnvilsack/dotfiler
+EOF
+}
+
+# Main CLI router
+main() {
+    
+    # Handle no arguments
+    if [[ $# -eq 0 ]]; then
+        show_help
+        exit 0
+    fi
+    
+    # Parse command
+    case "${1:-}" in
+        "add"|"a")
+            shift
+            cmd_add "$@"
+            ;;
+        "build"|"b")
+            cmd_build "$@"
+            ;;
+        "list"|"l")
+            cmd_list "$@"
+            ;;
+        "sync"|"s")
+            cmd_sync "$@"
+            ;;
+        "version")
+            echo "$PROGRAM_NAME v$VERSION"
+            ;;
+        "help"|"-h"|"--help")
+            show_help
+            ;;
+        *)
+            log_error "Unknown command: $1"
+            echo ""
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+# Run main function with all arguments
+main "$@"
+

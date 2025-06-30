@@ -4,7 +4,7 @@
 set -euo pipefail
 
 INSTALL_DIR="${1:-$HOME/.local/bin}"
-REPO_URL="https://github.com/johnvilsack/dotfiles"
+REPO_URL="https://github.com/johnvilsack/dotfiler"
 
 echo "Installing dotfiler to $INSTALL_DIR..."
 
@@ -21,11 +21,11 @@ fi
 mkdir -p "$INSTALL_DIR"
 
 # Copy files
-cp -rf dotfiler/* "$INSTALL_DIR/"
+cp -r bin lib "$INSTALL_DIR/../"
 chmod +x "$INSTALL_DIR/dotfiler"
 
 # Cleanup
 rm -rf /tmp/dotfiler
 
-echo "dotfiler installed!"
+echo "✅ dotfiler installed!"
 echo "Make sure $INSTALL_DIR is in your PATH"
