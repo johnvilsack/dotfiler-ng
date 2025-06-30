@@ -6,7 +6,7 @@ set -euo pipefail
 INSTALL_DIR="${1:-$HOME/.local/bin}"
 REPO_URL="https://github.com/johnvilsack/dotfiles"
 
-echo "3 Installing dotfiler to $INSTALL_DIR..."
+echo "Installing dotfiler to $INSTALL_DIR..."
 
 # Clone or download
 if command -v git >/dev/null 2>&1; then
