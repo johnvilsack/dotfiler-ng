@@ -11,7 +11,6 @@ echo "Installing dotfiler to $INSTALL_DIR..."
 
 # Clone or download
 if command -v git >/dev/null 2>&1; then
-    echo "Git found, cloning repository..."
     git clone "$REPO_URL" /tmp/dotfiler
     cd /tmp/dotfiler
 else
@@ -20,17 +19,13 @@ else
 fi
 
 # Create install 
-echo "Creating install directory..."
 mkdir -p "$INSTALL_DIR"
 
 # Copy files
 cp dotfiler/dotfiler "$INSTALL_DIR/" && cp -rf dotfiler/dotfiler-lib "$INSTALL_DIR/"
-echo "Make X to $INSTALL_DIR..."
 chmod +x "$INSTALL_DIR/dotfiler"
 
 # Cleanup
-echo "Cleaning up..."
 rm -rf /tmp/dotfiler
 
 echo "dotfiler installed!"
-echo "Make sure $INSTALL_DIR is in your PATH"
