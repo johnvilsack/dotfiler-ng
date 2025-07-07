@@ -78,8 +78,19 @@ cmd_add() {
             tracked_path='$HOME'"${source_path#$HOME}"
         fi
         
+        # Append the new path to the list
         echo "$tracked_path" >> "$TRACKEDFOLDERLIST"
-        sort -u "$TRACKEDFOLDERLIST" -o "$TRACKEDFOLDERLIST"
+        
+        # Now, sort the file while preserving the symlink
+        local temp_file
+        temp_file=$(mktemp)
+        # Sort the list and write to a temporary file
+        sort -u "$TRACKEDFOLDERLIST" > "$temp_file"
+        # Overwrite the original file by redirecting content, which follows the symlink
+        cat "$temp_file" > "$TRACKEDFOLDERLIST"
+        # Remove the temporary file
+        rm "$temp_file"
+        
         echo "[INFO] Added to tracking: $tracked_path"
     fi
 }

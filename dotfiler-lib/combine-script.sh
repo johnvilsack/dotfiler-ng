@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-output_file="output.sh"
-input_files=("common.sh" "add.sh" "build.sh" "list.sh" "newsync.sh" "sync.sh" "../dotfiler")
+output_file="OUTPUT.sh"
+input_files=("common.sh" "add.sh" "remove.sh" "build.sh" "list.sh" "newsync.sh" "sync.sh" "../dotfiler")
 # Clear output file
 > "$output_file"
 
