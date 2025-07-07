@@ -11,6 +11,7 @@ LIB_DIR="$(dirname "$SCRIPT_DIR")/bin/dotfiler-lib"
 # Source library files
 source "$LIB_DIR/common.sh"
 source "$LIB_DIR/add.sh"
+source "$LIB_DIR/remove.sh"
 source "$LIB_DIR/build.sh"
 source "$LIB_DIR/list.sh"
 source "$LIB_DIR/newsync.sh"
@@ -30,6 +31,7 @@ USAGE:
 
 COMMANDS:
     add, a <file>     Add a file or directory to dotfiles
+    remove, r <file>  Remove a file or directory from dotfiles
     build, b         Build dotfiles by linking all tracked files
     sync, s           Link all dotfiles to their destinations
     list, l           List all tracked dotfiles
@@ -74,6 +76,9 @@ main() {
             ;;
         "sync"|"s")
             cmd_sync "$@"
+            ;;
+        "remove"|"r")
+            cmd_remove "$@"
             ;;
         "version")
             echo "$PROGRAM_NAME v$VERSION"
