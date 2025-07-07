@@ -78,6 +78,7 @@ main() {
             cmd_sync "$@"
             ;;
         "remove"|"r")
+            shift
             cmd_remove "$@"
             ;;
         "version")

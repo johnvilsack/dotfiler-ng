@@ -6,18 +6,42 @@ cmd_remove() {
         return 1
     fi
     
+    # Ensure required environment variables are set
+    if [[ -z "$DOTFILESPATH" ]]; then
+        log_error "DOTFILESPATH environment variable is not set"
+        return 1
+    fi
+    
+    if [[ -z "$OS" ]]; then
+        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    fi
+    
     # Resolve the path
     local target_path=""
     local tracked_path=""
     
-    # Try to resolve the path
-    if [[ -e "$input" ]] || [[ -L "$input" ]]; then
-        target_path=$(realpath -m "$input")
-    elif [[ -e "$HOME/$input" ]] || [[ -L "$HOME/$input" ]]; then
-        target_path=$(realpath -m "$HOME/$input")
+    # Handle absolute paths first
+    if [[ "$input" == /* ]]; then
+        if [[ -L "$input" ]] || [[ -e "$input" ]]; then
+            target_path="$input"
+        else
+            log_error "Cannot find $input"
+            return 1
+        fi
+    # Then check current directory
+    elif [[ -L "$input" ]] || [[ -e "$input" ]]; then
+        target_path="$(pwd)/$input"
+    # Then check in HOME
+    elif [[ -L "$HOME/$input" ]] || [[ -e "$HOME/$input" ]]; then
+        target_path="$HOME/$input"
     else
         log_error "Cannot find $input"
         return 1
+    fi
+    
+    # Normalize the path (remove ./ and ../ etc) for non-symlinks
+    if [[ -e "$target_path" ]] && [[ ! -L "$target_path" ]]; then
+        target_path=$(realpath "$target_path")
     fi
     
     # Check if this file is tracked
@@ -28,8 +52,9 @@ cmd_remove() {
     
     # Find the tracked entry
     while IFS= read -r line; do
-        [[ -z "$line" ]] && continue
-        # Expand $HOME in the tracked path
+        # Skip empty lines
+        [[ -z "${line// }" ]] && continue
+        # Expand $HOME in the tracked path for comparison
         expanded_line="${line//\$HOME/$HOME}"
         if [[ "$expanded_line" == "$target_path" ]]; then
             tracked_path="$line"
@@ -115,11 +140,19 @@ cmd_remove() {
         done
     fi
     
-    # Remove from tracking
+    # Remove from tracking - using a simple line-by-line approach
+    log_info "Removing from tracking list"
     local temp_file=$(mktemp)
-    grep -v "^${tracked_path}$" "$TRACKEDFOLDERLIST" > "$temp_file" || true
-    mv "$temp_file" "$TRACKEDFOLDERLIST"
     
+    # Copy all lines except the one we want to remove
+    while IFS= read -r line; do
+        if [[ "$line" != "$tracked_path" ]]; then
+            echo "$line" >> "$temp_file"
+        fi
+    done < "$TRACKEDFOLDERLIST"
+    
+    # Replace the original file
+    mv "$temp_file" "$TRACKEDFOLDERLIST"
     log_success "Removed from tracking: $tracked_path"
     
     # If tracking file is now empty, remove it
