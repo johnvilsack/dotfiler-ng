@@ -2,7 +2,7 @@
 # dotfiler - Main executable
 
 set -euo pipefail
-TRACKEDFOLDERLIST="$DOTFILESPATH/$OS/tracked-folders.txt"
+TRACKEDFOLDERLIST="$HOME/.config/dotfiler/tracked-folders.txt"
 
 # Determine script directory and lib path
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
