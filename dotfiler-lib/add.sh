@@ -71,8 +71,15 @@ cmd_add() {
     # Add to tracking unless --no-track was specified
     if [[ "$track" == true ]]; then
         mkdir -p "$(dirname "$TRACKEDFOLDERLIST")"
-        echo "$source_path" >> "$TRACKEDFOLDERLIST"
+        
+        # Write path with $HOME variable if applicable
+        local tracked_path="$source_path"
+        if [[ "$source_path" == "$HOME"* ]]; then
+            tracked_path='$HOME'"${source_path#$HOME}"
+        fi
+        
+        echo "$tracked_path" >> "$TRACKEDFOLDERLIST"
         sort -u "$TRACKEDFOLDERLIST" -o "$TRACKEDFOLDERLIST"
-        echo "[INFO] Added to tracking: $source_path"
+        echo "[INFO] Added to tracking: $tracked_path"
     fi
 }
