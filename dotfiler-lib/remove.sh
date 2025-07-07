@@ -140,19 +140,25 @@ cmd_remove() {
         done
     fi
     
-    # Remove from tracking - using a simple line-by-line approach
+    # Remove from tracking - using a temporary file
     log_info "Removing from tracking list"
-    local temp_file=$(mktemp)
-    
-    # Copy all lines except the one we want to remove
+    local temp_file
+    temp_file=$(mktemp)
+
+    # Copy all lines except the one we want to remove into the temp file
     while IFS= read -r line; do
         if [[ "$line" != "$tracked_path" ]]; then
             echo "$line" >> "$temp_file"
         fi
     done < "$TRACKEDFOLDERLIST"
-    
-    # Replace the original file
-    mv "$temp_file" "$TRACKEDFOLDERLIST"
+
+    # Overwrite the original list with the temp file's content using redirection.
+    # This follows the symlink and preserves it.
+    cat "$temp_file" > "$TRACKEDFOLDERLIST"
+
+    # Clean up the temporary file
+    rm "$temp_file"
+
     log_success "Removed from tracking: $tracked_path"
     
     # If tracking file is now empty, remove it
