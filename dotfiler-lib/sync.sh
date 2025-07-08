@@ -7,11 +7,13 @@ cmd_sync() {
     echo "[INFO] Syncing tracked dotfiles (new items only)..."
     local synced_count=0
     
-    while IFS= read -r source_path; do
-        [[ -z "$source_path" ]] && continue
-        
+        while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        # expand literal $HOME into this machine’s real $HOME
+        source_path="${line/#\$\HOME/$HOME}"
+
         if [[ ! -e "$source_path" ]]; then
-            echo "[WARNING] Source missing: $source_path"
+            echo "[WARNING] Source missing: $line"
             continue
         fi
         

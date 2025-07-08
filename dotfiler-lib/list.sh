@@ -8,12 +8,14 @@ cmd_list() {
     fi
     
     echo "[INFO] Tracked dotfiles:"
-    while IFS= read -r file_path; do
-        [[ -z "$file_path" ]] && continue
-        if [[ -e "$file_path" ]]; then
-            echo "[INFO] $file_path"
-        else
-            echo "[WARNING] $file_path (missing)"
-        fi
+    while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    # expand literal $HOME into this machine’s real $HOME
+    source_path="${line/#\$\HOME/$HOME}"
+
+    if [[ ! -e "$source_path" ]]; then
+        echo "[WARNING] Source missing: $line"
+        continue
+    fi
     done < "$TRACKEDFOLDERLIST"
 }
