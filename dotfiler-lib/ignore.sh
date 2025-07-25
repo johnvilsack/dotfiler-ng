@@ -21,9 +21,10 @@ cmd_ignore() {
         target="$(cd "$(dirname "$target")" 2>/dev/null && pwd)/$(basename "$target")"
     fi
     
-    # Convert absolute path to pattern relative to HOME for consistency
+    # Store pattern in same format as tracking system
+    local pattern
     if [[ "$target" == "$HOME"* ]]; then
-        pattern="${target#$HOME/}"
+        pattern='$HOME'"${target#$HOME}"
     else
         pattern="$target"
     fi
@@ -38,9 +39,72 @@ cmd_ignore() {
     echo "$pattern" >> "$IGNORELIST"
     log_success "Added '$pattern' to ignore list"
     
+    # Remove any matching entries from tracking list to prevent conflicts
+    remove_matching_from_tracking "$pattern"
+    
     # Clean up any existing files in repo that match this pattern
     log_info "Cleaning up existing files matching this pattern..."
     remove_ignored_from_repo "$pattern"
+}
+
+# Remove matching entries from tracking list to prevent conflicts
+remove_matching_from_tracking() {
+    local ignore_pattern="$1"
+    
+    if [[ ! -f "$TRACKEDFOLDERLIST" ]]; then
+        return 0
+    fi
+    
+    local temp_file
+    temp_file=$(mktemp)
+    local removed_count=0
+    
+    while IFS= read -r tracked_line; do
+        [[ -z "$tracked_line" ]] && continue
+        
+        # Check if this tracked entry matches the ignore pattern
+        local should_remove=false
+        
+        # Direct match with ignore pattern
+        if [[ "$tracked_line" == "$ignore_pattern" ]]; then
+            should_remove=true
+        fi
+        
+        # Check if tracked path is under ignored directory
+        # Convert both to absolute paths for comparison
+        local tracked_abs="${tracked_line/#\$HOME/$HOME}"
+        local ignore_abs="${ignore_pattern/#\$HOME/$HOME}"
+        
+        if [[ "$tracked_abs" == "$ignore_abs"/* ]]; then
+            should_remove=true
+        fi
+        
+        # Also check glob patterns
+        case "$tracked_line" in
+            $ignore_pattern) should_remove=true ;;
+        esac
+        
+        if [[ "$should_remove" == true ]]; then
+            log_info "Removing from tracking (conflicts with ignore): $tracked_line"
+            removed_count=$((removed_count + 1))
+        else
+            echo "$tracked_line" >> "$temp_file"
+        fi
+    done < "$TRACKEDFOLDERLIST"
+    
+    if [[ $removed_count -gt 0 ]]; then
+        # Overwrite original file
+        cat "$temp_file" > "$TRACKEDFOLDERLIST"
+        log_success "Removed $removed_count conflicting entries from tracking list"
+        
+        # Remove tracking file if empty
+        if [[ ! -s "$TRACKEDFOLDERLIST" ]]; then
+            rm "$TRACKEDFOLDERLIST"
+            log_info "No more tracked files, removed tracking list"
+        fi
+    fi
+    
+    rm "$temp_file"
 }
 
 # Helper function to check if a path should be ignored
@@ -50,30 +114,43 @@ should_ignore() {
     # Return false (don't ignore) if ignore list doesn't exist
     [[ ! -f "$IGNORELIST" ]] && return 1
     
+    # Convert path to tracking format for comparison
+    local path_as_tracked
+    if [[ "$path" == "$HOME"* ]]; then
+        path_as_tracked='$HOME'"${path#$HOME}"
+    else
+        path_as_tracked="$path"
+    fi
+    
     # Check against each pattern in ignore list
     while IFS= read -r pattern; do
         [[ -z "$pattern" ]] && continue
         
-        # Check multiple formats for comprehensive matching
-        local matches=(
-            "$path"                           # Full absolute path
-            "${path#$HOME/}"                 # Relative to HOME (if applicable)
-            "${path##*/}"                    # Just filename
-        )
-        
-        # If path is in HOME, also check HOME-relative format
-        if [[ "$path" == "$HOME"* ]]; then
-            matches+=("${path#$HOME/}")
+        # Direct match
+        if [[ "$path_as_tracked" == "$pattern" ]]; then
+            return 0  # Should ignore
         fi
         
-        # Check all possible matches against the pattern
-        for match in "${matches[@]}"; do
-            case "$match" in
-                $pattern)
-                    return 0  # Should ignore
-                    ;;
-            esac
-        done
+        # Check if path is under ignored directory
+        local pattern_abs="${pattern/#\$HOME/$HOME}"
+        if [[ "$path" == "$pattern_abs"/* ]]; then
+            return 0  # Should ignore
+        fi
+        
+        # Check glob patterns against both formats
+        case "$path_as_tracked" in
+            $pattern) return 0 ;;
+        esac
+        
+        case "$path" in
+            $pattern) return 0 ;;
+        esac
+        
+        # Check just filename for patterns like "*.log"
+        local filename="${path##*/}"
+        case "$filename" in
+            $pattern) return 0 ;;
+        esac
         
     done < "$IGNORELIST"
     
