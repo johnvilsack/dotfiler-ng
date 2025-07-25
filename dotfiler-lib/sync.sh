@@ -9,8 +9,14 @@ cmd_sync() {
     
         while IFS= read -r line; do
         [[ -z "$line" ]] && continue
-        # expand literal $HOME into this machine’s real $HOME
+        # expand literal $HOME into this machine's real $HOME
         source_path="${line/#\$\HOME/$HOME}"
+
+        # Check if this path should be ignored
+        if should_ignore "$source_path"; then
+            echo "[INFO] Ignoring: $source_path"
+            continue
+        fi
 
         if [[ ! -e "$source_path" ]]; then
             echo "[WARNING] Source missing: $line"

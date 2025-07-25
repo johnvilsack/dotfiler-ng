@@ -16,6 +16,7 @@ source "$LIB_DIR/build.sh"
 source "$LIB_DIR/list.sh"
 source "$LIB_DIR/newsync.sh"
 source "$LIB_DIR/sync.sh"
+source "$LIB_DIR/ignore.sh"
 
 # Version and metadata
 VERSION="1.0.9"
@@ -32,6 +33,7 @@ USAGE:
 COMMANDS:
     add, a <file>     Add a file or directory to dotfiles
     remove, r <file>  Remove a file or directory from dotfiles
+    ignore, i <file>  Add a file or directory to ignore list
     build, b         Build dotfiles by linking all tracked files
     sync, s           Link all dotfiles to their destinations
     list, l           List all tracked dotfiles
@@ -41,6 +43,8 @@ COMMANDS:
 EXAMPLES:
     $PROGRAM_NAME add .zshrc
     $PROGRAM_NAME add ~/.config/nvim
+    $PROGRAM_NAME ignore .DS_Store
+    $PROGRAM_NAME ignore ~/.config/sensitive
     $PROGRAM_NAME list
     $PROGRAM_NAME sync
     $PROGRAM_NAME build
@@ -80,6 +84,10 @@ main() {
         "remove"|"r")
             shift
             cmd_remove "$@"
+            ;;
+        "ignore"|"i")
+            shift
+            cmd_ignore "$@"
             ;;
         "version")
             echo "$PROGRAM_NAME v$VERSION"

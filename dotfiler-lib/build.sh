@@ -19,6 +19,10 @@ cmd_build() {
         
         # Find all files in this directory recursively
         find "$dir" -type f -not -name ".DS_Store" | while read -r file; do
+            # Check if this file should be ignored
+            if should_ignore "$file"; then
+                continue
+            fi
             # Get relative path from the current directory
             relative_path="${file#$dir/}"
             target="$target_base/$relative_path"
