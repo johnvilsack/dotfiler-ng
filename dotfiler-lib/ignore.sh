@@ -83,7 +83,7 @@ should_ignore() {
 
 # Remove ignored files from the dotfiles repository
 remove_ignored_from_repo() {
-    local pattern="$1"  # Optional: specific pattern to clean, or empty for all
+    local pattern="${1:-}"  # Optional: specific pattern to clean, or empty for all
     
     if [[ -z "$DOTFILESPATH" ]]; then
         log_error "DOTFILESPATH environment variable is not set"
