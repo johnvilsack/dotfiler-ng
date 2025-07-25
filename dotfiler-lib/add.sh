@@ -1,3 +1,40 @@
+# Recursively copy directory while respecting ignore patterns
+copy_with_ignore() {
+    local source_dir="$1"
+    local dest_dir="$2"
+    
+    # Create the destination directory
+    mkdir -p "$dest_dir"
+    
+    # Find all files and directories in source
+    find "$source_dir" -type f -o -type d | while read -r item; do
+        # Skip the root directory itself
+        [[ "$item" == "$source_dir" ]] && continue
+        
+        # Check if this item should be ignored
+        if should_ignore "$item"; then
+            log_info "Skipping ignored: $item"
+            continue
+        fi
+        
+        # Calculate relative path from source
+        local source_with_slash="$source_dir"
+        [[ "$source_with_slash" != */ ]] && source_with_slash="$source_with_slash/"
+        
+        local item_relative="${item#$source_with_slash}"
+        local dest_item="$dest_dir/$item_relative"
+        
+        if [[ -d "$item" ]]; then
+            # Create directory
+            mkdir -p "$dest_item"
+        else
+            # Create parent directory and copy file
+            mkdir -p "$(dirname "$dest_item")"
+            cp "$item" "$dest_item"
+        fi
+    done
+}
+
 cmd_add() {
     local track=true
     local input=""
@@ -59,8 +96,18 @@ cmd_add() {
     dest_dir="$(dirname "$dest_path")"
     mkdir -p "$dest_dir"
     
-    # Copy the file or directory
-    cp -r "$source_path" "$dest_path"
+    # Copy the file or directory (respecting ignore patterns)
+    if [[ -d "$source_path" ]]; then
+        # For directories, do selective copying
+        copy_with_ignore "$source_path" "$dest_path"
+    else
+        # For files, check if it should be ignored
+        if should_ignore "$source_path"; then
+            log_warning "Skipping ignored file: $source_path"
+            return 0
+        fi
+        cp "$source_path" "$dest_path"
+    fi
     
     if [[ -d "$source_path" ]]; then
         echo "[INFO] Copied directory: $source_path -> $dest_path"
