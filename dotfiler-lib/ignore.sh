@@ -50,38 +50,37 @@ should_ignore() {
     # Return false (don't ignore) if ignore list doesn't exist
     [[ ! -f "$IGNORELIST" ]] && return 1
     
-    # Convert path to relative format for matching
-    local check_path
-    if [[ "$path" == "$HOME"* ]]; then
-        check_path="${path#$HOME/}"
-    else
-        check_path="$path"
-    fi
-    
     # Check against each pattern in ignore list
     while IFS= read -r pattern; do
         [[ -z "$pattern" ]] && continue
         
-        # Simple glob matching - bash's case statement supports basic patterns
-        case "$check_path" in
-            $pattern)
-                return 0  # Should ignore
-                ;;
-        esac
+        # Check multiple formats for comprehensive matching
+        local matches=(
+            "$path"                           # Full absolute path
+            "${path#$HOME/}"                 # Relative to HOME (if applicable)
+            "${path##*/}"                    # Just filename
+        )
         
-        # Also check the full path for absolute patterns
-        case "$path" in
-            $pattern)
-                return 0  # Should ignore
-                ;;
-        esac
+        # If path is in HOME, also check HOME-relative format
+        if [[ "$path" == "$HOME"* ]]; then
+            matches+=("${path#$HOME/}")
+        fi
+        
+        # Check all possible matches against the pattern
+        for match in "${matches[@]}"; do
+            case "$match" in
+                $pattern)
+                    return 0  # Should ignore
+                    ;;
+            esac
+        done
         
     done < "$IGNORELIST"
     
     return 1  # Don't ignore
 }
 
-# Remove ignored files from the dotfiles repository
+# Remove ignored files from the dotfiles repository and handle symlinks
 remove_ignored_from_repo() {
     local pattern="${1:-}"  # Optional: specific pattern to clean, or empty for all
     
@@ -103,55 +102,138 @@ remove_ignored_from_repo() {
     
     log_info "Scanning repository for ignored files..."
     
-    # Find all files in the repo
-    find "$repo_files_dir" -type f | while read -r repo_file; do
-        # Convert repo path back to original path for ignore checking
-        local relative_path="${repo_file#$repo_files_dir/}"
-        local original_path
-        
-        if [[ "$relative_path" == HOME/* ]]; then
-            # It's a HOME file
-            original_path="$HOME/${relative_path#HOME/}"
-        else
-            # It's a system file
-            original_path="/$relative_path"
-        fi
-        
-        # Check if this file should be ignored
-        local should_remove=false
-        
-        if [[ -n "$pattern" ]]; then
-            # Check specific pattern
-            case "$original_path" in
-                *$pattern*) should_remove=true ;;
-            esac
-            case "${original_path#$HOME/}" in
-                $pattern) should_remove=true ;;
-            esac
-        else
-            # Check all ignore patterns
-            if should_ignore "$original_path"; then
-                should_remove=true
-            fi
-        fi
-        
-        if [[ "$should_remove" == true ]]; then
-            log_info "Removing ignored file from repo: $repo_file"
-            rm -f "$repo_file"
+    # Also check for currently tracked files that should be ignored
+    if [[ -f "$TRACKEDFOLDERLIST" ]]; then
+        while IFS= read -r tracked_line; do
+            [[ -z "$tracked_line" ]] && continue
             
-            # Clean up empty parent directories
-            local parent_dir="$(dirname "$repo_file")"
-            while [[ "$parent_dir" != "$repo_files_dir" ]] && [[ "$parent_dir" != "/" ]]; do
-                if [[ -d "$parent_dir" ]] && [[ -z "$(ls -A "$parent_dir" 2>/dev/null)" ]]; then
-                    rmdir "$parent_dir" 2>/dev/null
-                    log_info "Removed empty directory: $parent_dir"
-                    parent_dir="$(dirname "$parent_dir")"
-                else
-                    break
+            # Expand $HOME in tracked path to get actual path
+            local actual_path="${tracked_line/#\$HOME/$HOME}"
+            
+            # Check if this tracked file should be ignored
+            local should_remove=false
+            
+            if [[ -n "$pattern" ]]; then
+                # Check specific pattern
+                if should_ignore "$actual_path"; then
+                    case "$actual_path" in
+                        *$pattern*) should_remove=true ;;
+                    esac
+                    case "${actual_path#$HOME/}" in
+                        $pattern) should_remove=true ;;
+                    esac
                 fi
-            done
+            else
+                # Check all ignore patterns
+                if should_ignore "$actual_path"; then
+                    should_remove=true
+                fi
+            fi
+            
+            if [[ "$should_remove" == true ]]; then
+                log_info "Found ignored tracked file: $actual_path"
+                
+                # If it's currently symlinked, restore the original file
+                if [[ -L "$actual_path" ]]; then
+                    local link_target=$(readlink "$actual_path")
+                    
+                    # Determine expected repo path
+                    local expected_repo_path
+                    if [[ "$tracked_line" == '$HOME'* ]]; then
+                        local rel_path="${tracked_line#\$HOME/}"
+                        expected_repo_path="$repo_files_dir/HOME/$rel_path"
+                    else
+                        local rel_path="${tracked_line#/}"
+                        expected_repo_path="$repo_files_dir/$rel_path"
+                    fi
+                    
+                    # If symlinked to our repo, restore original
+                    if [[ "$link_target" == "$expected_repo_path" ]]; then
+                        log_info "Restoring original file and removing from tracking: $actual_path"
+                        
+                        # Determine if we need sudo
+                        local needs_sudo=false
+                        if [[ "$actual_path" != "$HOME"* ]] && [[ "$actual_path" == "/"* ]]; then
+                            needs_sudo=true
+                        fi
+                        
+                        # Remove symlink and restore original
+                        if [[ "$needs_sudo" == true ]]; then
+                            sudo rm "$actual_path"
+                            sudo cp -r "$expected_repo_path" "$actual_path"
+                        else
+                            rm "$actual_path"
+                            cp -r "$expected_repo_path" "$actual_path"
+                        fi
+                        
+                        log_success "Restored original file: $actual_path"
+                    fi
+                fi
+                
+                # Remove from repo if it exists
+                local repo_path
+                if [[ "$tracked_line" == '$HOME'* ]]; then
+                    local rel_path="${tracked_line#\$HOME/}"
+                    repo_path="$repo_files_dir/HOME/$rel_path"
+                else
+                    local rel_path="${tracked_line#/}"
+                    repo_path="$repo_files_dir/$rel_path"
+                fi
+                
+                if [[ -e "$repo_path" ]]; then
+                    log_info "Removing from repository: $repo_path"
+                    rm -rf "$repo_path"
+                    
+                    # Clean up empty parent directories
+                    local parent_dir="$(dirname "$repo_path")"
+                    while [[ "$parent_dir" != "$repo_files_dir" ]] && [[ "$parent_dir" != "/" ]]; do
+                        if [[ -d "$parent_dir" ]] && [[ -z "$(ls -A "$parent_dir" 2>/dev/null)" ]]; then
+                            rmdir "$parent_dir" 2>/dev/null
+                            log_info "Removed empty directory: $parent_dir"
+                            parent_dir="$(dirname "$parent_dir")"
+                        else
+                            break
+                        fi
+                    done
+                fi
+                
+                # Remove from tracking list
+                remove_from_tracking "$tracked_line"
+            fi
+            
+        done < "$TRACKEDFOLDERLIST"
+    fi
+}
+
+# Helper function to remove a line from tracking list
+remove_from_tracking() {
+    local line_to_remove="$1"
+    
+    if [[ ! -f "$TRACKEDFOLDERLIST" ]]; then
+        return 0
+    fi
+    
+    local temp_file
+    temp_file=$(mktemp)
+    
+    # Copy all lines except the one to remove
+    while IFS= read -r line; do
+        if [[ "$line" != "$line_to_remove" ]]; then
+            echo "$line" >> "$temp_file"
         fi
-    done
+    done < "$TRACKEDFOLDERLIST"
+    
+    # Overwrite original file
+    cat "$temp_file" > "$TRACKEDFOLDERLIST"
+    rm "$temp_file"
+    
+    log_info "Removed from tracking: $line_to_remove"
+    
+    # Remove tracking file if empty
+    if [[ ! -s "$TRACKEDFOLDERLIST" ]]; then
+        rm "$TRACKEDFOLDERLIST"
+        log_info "No more tracked files, removed tracking list"
+    fi
 }
 
 # Command to clean up all ignored files from the repository
