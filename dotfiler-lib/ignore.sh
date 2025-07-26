@@ -324,3 +324,74 @@ cmd_cleanup() {
     remove_ignored_from_repo
     log_success "Cleanup completed"
 }
+
+# Remove matching patterns from ignore list when adding files
+remove_from_ignore_list() {
+    local add_path="$1"
+    
+    # Don't do anything if ignore list doesn't exist
+    if [[ ! -f "$IGNORELIST" ]]; then
+        return 0
+    fi
+    
+    # Convert add path to tracking format for comparison
+    local add_path_tracked
+    if [[ "$add_path" == "$HOME"* ]]; then
+        add_path_tracked='$HOME'"${add_path#$HOME}"
+    else
+        add_path_tracked="$add_path"
+    fi
+    
+    local temp_file
+    temp_file=$(mktemp)
+    local removed_count=0
+    
+    while IFS= read -r ignore_pattern; do
+        [[ -z "$ignore_pattern" ]] && continue
+        
+        local should_remove=false
+        
+        # Check if the add path matches or contains this ignore pattern
+        
+        # Direct match
+        if [[ "$add_path_tracked" == "$ignore_pattern" ]]; then
+            should_remove=true
+        fi
+        
+        # Check if we're adding a parent directory that contains ignored items
+        local ignore_abs="${ignore_pattern/#\$HOME/$HOME}"
+        if [[ "$ignore_abs" == "$add_path"/* ]]; then
+            should_remove=true
+        fi
+        
+        # Check glob patterns
+        case "$add_path_tracked" in
+            $ignore_pattern) should_remove=true ;;
+        esac
+        
+        case "$add_path" in
+            $ignore_pattern) should_remove=true ;;
+        esac
+        
+        if [[ "$should_remove" == true ]]; then
+            log_info "Removing conflicting ignore pattern: $ignore_pattern"
+            removed_count=$((removed_count + 1))
+        else
+            echo "$ignore_pattern" >> "$temp_file"
+        fi
+    done < "$IGNORELIST"
+    
+    if [[ $removed_count -gt 0 ]]; then
+        # Overwrite original ignore list
+        cat "$temp_file" > "$IGNORELIST"
+        log_success "Removed $removed_count conflicting patterns from ignore list"
+        
+        # Remove ignore file if empty
+        if [[ ! -s "$IGNORELIST" ]]; then
+            rm "$IGNORELIST"
+            log_info "No more ignore patterns, removed ignore list"
+        fi
+    fi
+    
+    rm "$temp_file"
+}

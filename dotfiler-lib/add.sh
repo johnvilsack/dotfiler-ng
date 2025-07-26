@@ -77,6 +77,9 @@ cmd_add() {
     
     echo "[INFO] Found: $source_path"
     
+    # Remove any matching ignore patterns to prevent conflicts
+    remove_from_ignore_list "$source_path"
+    
     # Determine destination based on whether it's in HOME or not
     if [[ "$source_path" == "$HOME"* ]]; then
         # It's in HOME, so copy to HOME directory with relative path
