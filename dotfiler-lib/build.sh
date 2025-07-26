@@ -19,8 +19,18 @@ cmd_build() {
         
         # Find all files in this directory recursively
         find "$dir" -type f -not -name ".DS_Store" | while read -r file; do
+            # Convert repo path back to original path for ignore checking
+            local relative_from_dir="${file#$dir/}"
+            local original_path
+            if [[ "$dir_name" == "HOME" ]]; then
+                original_path="$HOME/$relative_from_dir"
+            else
+                original_path="/$dir_name/$relative_from_dir"
+            fi
+            
             # Check if this file should be ignored
-            if should_ignore "$file"; then
+            if should_ignore "$original_path"; then
+                log_info "Skipping ignored file: $original_path"
                 continue
             fi
             # Get relative path from the current directory
