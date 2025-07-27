@@ -533,7 +533,48 @@ cmd_unmanage() {
     
     log_info "Unmanaging: $target"
     
-    # Restore symlink to hard file/directory if needed
+    # First, find and restore any symlinked files within this path
+    if [[ -d "$target" ]]; then
+        log_info "Scanning for symlinked files within directory: $target"
+        find "$target" -type l | while read -r symlink; do
+            local link_target=$(readlink "$symlink")
+            
+            # Check if this symlink points to our repo
+            if [[ "$link_target" == "$repo_path"* ]]; then
+                log_info "Restoring symlinked file: $symlink"
+                
+                # Determine if we need sudo
+                local needs_sudo=false
+                if [[ "$symlink" != "$HOME"* ]] && [[ "$symlink" == "/"* ]]; then
+                    needs_sudo=true
+                fi
+                
+                # Check if repo file actually exists before trying to restore
+                if [[ -e "$link_target" ]]; then
+                    # Replace symlink with repo content
+                    if [[ "$needs_sudo" == true ]]; then
+                        sudo rm "$symlink"
+                        sudo cp -r "$link_target" "$symlink"
+                    else
+                        rm "$symlink"
+                        cp -r "$link_target" "$symlink"
+                    fi
+                    
+                    log_success "Restored: $symlink"
+                else
+                    log_warning "Cannot restore $symlink - repo file missing: $link_target"
+                    log_info "Removing broken symlink: $symlink"
+                    if [[ "$needs_sudo" == true ]]; then
+                        sudo rm "$symlink"
+                    else
+                        rm "$symlink"
+                    fi
+                fi
+            fi
+        done
+    fi
+    
+    # Then handle the main path if it's a symlink
     if [[ -L "$target" ]]; then
         local link_target=$(readlink "$target")
         if [[ "$link_target" == "$repo_path" ]]; then
@@ -545,16 +586,27 @@ cmd_unmanage() {
                 needs_sudo=true
             fi
             
-            # Replace symlink with repo content
-            if [[ "$needs_sudo" == true ]]; then
-                sudo rm "$target"
-                sudo cp -r "$repo_path" "$target"
+            # Check if repo path exists before trying to restore
+            if [[ -e "$repo_path" ]]; then
+                # Replace symlink with repo content
+                if [[ "$needs_sudo" == true ]]; then
+                    sudo rm "$target"
+                    sudo cp -r "$repo_path" "$target"
+                else
+                    rm "$target"
+                    cp -r "$repo_path" "$target"
+                fi
+                
+                log_success "Restored: $target"
             else
-                rm "$target"
-                cp -r "$repo_path" "$target"
+                log_warning "Cannot restore $target - repo path missing: $repo_path"
+                log_info "Removing broken symlink: $target"
+                if [[ "$needs_sudo" == true ]]; then
+                    sudo rm "$target"
+                else
+                    rm "$target"
+                fi
             fi
-            
-            log_success "Restored: $target"
         fi
     fi
     

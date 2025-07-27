@@ -2,6 +2,44 @@ cmd_build() {
     # First cleanup any ignored files that are currently managed
     cleanup_ignored_files
     
+    # Auto-sync new files before building symlinks
+    if [[ -f "$TRACKEDFOLDERLIST" ]]; then
+        log_info "Syncing new files before building symlinks..."
+        
+        # Call sync logic directly without the error check since we already know tracked files exist
+        local synced_count=0
+        
+        while IFS= read -r line; do
+            [[ -z "$line" ]] && continue
+            # expand literal $HOME into this machine's real $HOME
+            source_path="${line/#\$\HOME/$HOME}"
+
+            # Check if this path should be ignored
+            if should_ignore "$source_path"; then
+                log_info "Ignoring: $source_path"
+                continue
+            fi
+
+            if [[ ! -e "$source_path" ]]; then
+                log_warning "Source missing: $line"
+                continue
+            fi
+            
+            if [[ -d "$source_path" ]]; then
+                log_info "Checking directory for new items: $source_path"
+            else
+                log_info "Checking file: $source_path"
+            fi
+            
+            cmd_newsync "$source_path"
+            synced_count=$((synced_count + 1))
+        done < "$TRACKEDFOLDERLIST"
+        
+        log_info "Processed $synced_count tracked items for sync"
+    else
+        log_info "No tracked files found, skipping sync"
+    fi
+    
     log_info "Linking config files with find"
     
     local dotfiles_base="$DOTFILESPATH/$OS/files"
