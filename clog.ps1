@@ -1,30 +1,5 @@
 #!/usr/bin/env pwsh
 
-# Version and program info (declare before parameters)
-$VERSION = "1.0.0"
-$PROGRAM_NAME = "clog.ps1"
-
-# Color mappings for different platforms
-$Colors = @{
-    "INFO"    = "Blue"
-    "WARNING" = "Yellow"  
-    "ERROR"   = "Red"
-    "SUCCESS" = "Green"
-    "DEBUG"   = "Magenta"
-    "TRACE"   = "Cyan"
-}
-
-# ANSI color codes for non-Windows or when needed
-$AnsiColors = @{
-    "INFO"    = "`e[1;34m"
-    "WARNING" = "`e[1;33m"
-    "ERROR"   = "`e[1;31m"
-    "SUCCESS" = "`e[1;32m"
-    "DEBUG"   = "`e[1;35m"
-    "TRACE"   = "`e[1;36m"
-    "RESET"   = "`e[0m"
-}
-
 <#
 .SYNOPSIS
     clog.ps1 - Cross-platform colorized logging utility (PowerShell version)
@@ -81,10 +56,35 @@ param(
     [switch]$Json,
     [switch]$NoSyslog,
     [switch]$NoColor,
-    [string]$Tag = $env:CLOG_TAG ?? "clog",
-    [switch]$Version,
+    [string]$Tag = $(if ($env:CLOG_TAG) { $env:CLOG_TAG } else { "clog" }),
+    [string]$Version,
     [switch]$Help
 )
+
+# Version and program info (declare after parameters)
+$VERSION = '1.0.0'
+$PROGRAM_NAME = "clog.ps1"
+
+# Color mappings for different platforms
+$Colors = @{
+    "INFO"    = "Blue"
+    "WARNING" = "Yellow"  
+    "ERROR"   = "Red"
+    "SUCCESS" = "Green"
+    "DEBUG"   = "Magenta"
+    "TRACE"   = "Cyan"
+}
+
+# ANSI color codes for non-Windows or when needed
+$AnsiColors = @{
+    "INFO"    = "`e[1;34m"
+    "WARNING" = "`e[1;33m"
+    "ERROR"   = "`e[1;31m"
+    "SUCCESS" = "`e[1;32m"
+    "DEBUG"   = "`e[1;35m"
+    "TRACE"   = "`e[1;36m"
+    "RESET"   = "`e[0m"
+}
 
 function Show-Help {
     @"
@@ -117,12 +117,12 @@ ENVIRONMENT VARIABLES:
     CLOG_NO_SYSLOG     Disable system logging if set
 
 EXAMPLES:
-    $Script:PROGRAM_NAME INFO "Application started successfully"
-    $Script:PROGRAM_NAME WARNING "Disk space is low"
-    $Script:PROGRAM_NAME ERROR "Failed to connect to database"
-    $Script:PROGRAM_NAME SUCCESS "Backup completed"
-    $Script:PROGRAM_NAME -Timestamp -IncludePid DEBUG "Debug information"
-    $Script:PROGRAM_NAME -Json INFO "Status update"
+    $PROGRAM_NAME INFO "Application started successfully"
+    $PROGRAM_NAME WARNING "Disk space is low"
+    $PROGRAM_NAME ERROR "Failed to connect to database"
+    $PROGRAM_NAME SUCCESS "Backup completed"
+    $PROGRAM_NAME -Timestamp -IncludePid DEBUG "Debug information"
+    $PROGRAM_NAME -Json INFO "Status update"
 
 COMPATIBILITY:
     - Windows PowerShell 5.1+
@@ -225,20 +225,20 @@ function Write-ColorizedOutput {
                 $timestampPart = $parts[0]
                 $tagPart = $parts[1]
                 Write-Host "$timestampPart " -NoNewline
-                Write-Host $tagPart -ForegroundColor $Script:Colors[$Level] -NoNewline
+                Write-Host $tagPart -ForegroundColor $Colors[$Level] -NoNewline
                 Write-Host " $Message"
             } else {
-                Write-Host $Prefix -ForegroundColor $Script:Colors[$Level] -NoNewline
+                Write-Host $Prefix -ForegroundColor $Colors[$Level] -NoNewline
                 Write-Host " $Message"
             }
         } else {
-            Write-Host $Prefix -ForegroundColor $Script:Colors[$Level] -NoNewline
+            Write-Host $Prefix -ForegroundColor $Colors[$Level] -NoNewline
             Write-Host " $Message"
         }
     } else {
         # Fallback to ANSI codes for older PowerShell
-        $colorCode = $Script:AnsiColors[$Level]
-        $resetCode = $Script:AnsiColors["RESET"]
+        $colorCode = $AnsiColors[$Level]
+        $resetCode = $AnsiColors["RESET"]
         
         if ($Timestamp) {
             $parts = $Prefix -split ' ', 2
@@ -260,7 +260,7 @@ if ($Help) {
 }
 
 if ($Version) {
-    Write-Output "$Script:PROGRAM_NAME v$Script:VERSION"
+    Write-Output "$PROGRAM_NAME v$VERSION"
     exit 0
 }
 
