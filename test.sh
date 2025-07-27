@@ -51,8 +51,11 @@ mkdir -p "$LIB_DIR"
 log_info "Installing main executables..."
 cp "$REPO_DIR/dotfiler" "$BIN_DIR/dotfiler"
 cp "$REPO_DIR/clog" "$BIN_DIR/clog"
+cp "$REPO_DIR/clog.ps1" "$BIN_DIR/clog.ps1" 
+cp "$REPO_DIR/pclog" "$BIN_DIR/pclog"
 chmod +x "$BIN_DIR/dotfiler"
 chmod +x "$BIN_DIR/clog"
+chmod +x "$BIN_DIR/pclog"
 
 # Copy library files
 log_info "Installing library files..."
@@ -99,6 +102,19 @@ if command -v clog >/dev/null 2>&1; then
     clog SUCCESS "Enhanced logging now active!"
 else
     log_warning "clog command not found in PATH"
+fi
+
+# Test PowerShell clog if PowerShell is available
+if command -v pwsh >/dev/null 2>&1 || command -v powershell >/dev/null 2>&1; then
+    if command -v pclog >/dev/null 2>&1; then
+        log_success "✓ pclog (PowerShell version) is available"
+        # Demonstrate PowerShell clog is working
+        pclog SUCCESS "PowerShell logging active!"
+    else
+        log_warning "pclog command not found in PATH"
+    fi
+else
+    log_info "PowerShell not detected - pclog not tested"
 fi
 
 if [[ "$DOTFILESPATH_SET" == true ]]; then
