@@ -77,6 +77,15 @@ cmd_add() {
     
     echo "[INFO] Found: $source_path"
     
+    # Check for conflicts with ignore patterns
+    if find_conflicting_ignore_patterns "$source_path"; then
+        echo ""
+        if ! prompt_user "Remove conflicting ignore patterns and continue?"; then
+            log_info "Add operation cancelled"
+            return 0
+        fi
+    fi
+    
     # Remove any matching ignore patterns to prevent conflicts
     remove_from_ignore_list "$source_path"
     

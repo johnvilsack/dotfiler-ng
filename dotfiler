@@ -34,6 +34,7 @@ COMMANDS:
     add, a <file>     Add a file or directory to dotfiles
     remove, r <file>  Remove a file or directory from dotfiles
     ignore, i <file>  Add a file or directory to ignore list
+    unmanage, u <file> Stop managing a tracked file (exact match only)
     cleanup, c        Remove all ignored files from repository
     build, b         Build dotfiles by linking all tracked files
     sync, s           Link all dotfiles to their destinations
@@ -46,6 +47,7 @@ EXAMPLES:
     $PROGRAM_NAME add ~/.config/nvim
     $PROGRAM_NAME ignore .DS_Store
     $PROGRAM_NAME ignore ~/.config/sensitive
+    $PROGRAM_NAME unmanage ~/.config/nvim
     $PROGRAM_NAME cleanup
     $PROGRAM_NAME list
     $PROGRAM_NAME sync
@@ -93,6 +95,10 @@ main() {
             ;;
         "cleanup"|"c")
             cmd_cleanup "$@"
+            ;;
+        "unmanage"|"u")
+            shift
+            cmd_unmanage "$@"
             ;;
         "version")
             echo "$PROGRAM_NAME v$VERSION"
