@@ -1,4 +1,7 @@
 cmd_build() {
+    # First cleanup any ignored files that are currently managed
+    cleanup_ignored_files
+    
     log_info "Linking config files with find"
     
     local dotfiles_base="$DOTFILESPATH/$OS/files"

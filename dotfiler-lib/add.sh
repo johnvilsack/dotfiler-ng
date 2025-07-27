@@ -80,6 +80,40 @@ cmd_add() {
     # Remove any matching ignore patterns to prevent conflicts
     remove_from_ignore_list "$source_path"
     
+    # Check if source is already a symlink and handle appropriately
+    if [[ -L "$source_path" ]]; then
+        local link_target=$(readlink "$source_path")
+        
+        # Convert source path to tracking format to determine expected repo path
+        local expected_tracked_path
+        if [[ "$source_path" == "$HOME"* ]]; then
+            expected_tracked_path='$HOME'"${source_path#$HOME}"
+        else
+            expected_tracked_path="$source_path"
+        fi
+        
+        # Determine what our repo path would be
+        local expected_repo_path
+        if [[ "$expected_tracked_path" == '$HOME'* ]]; then
+            local rel_path="${expected_tracked_path#\$HOME/}"
+            expected_repo_path="$DOTFILESPATH/$OS/files/HOME/$rel_path"
+        else
+            local rel_path="${expected_tracked_path#/}"
+            expected_repo_path="$DOTFILESPATH/$OS/files/$rel_path"
+        fi
+        
+        # Check if it's already symlinked to our repo
+        if [[ "$link_target" == "$expected_repo_path" ]]; then
+            # Already managed by us - just add to tracking if not already there
+            log_info "File already managed by dotfiler, adding to tracking: $source_path"
+        else
+            # Symlinked to something else - error out
+            log_error "Cannot add symlink that points to external location: $source_path -> $link_target"
+            log_error "Please resolve the symlink first or use a different file"
+            return 1
+        fi
+    fi
+    
     # Determine destination based on whether it's in HOME or not
     if [[ "$source_path" == "$HOME"* ]]; then
         # It's in HOME, so copy to HOME directory with relative path
@@ -100,7 +134,16 @@ cmd_add() {
     mkdir -p "$dest_dir"
     
     # Copy the file or directory (respecting ignore patterns)
-    if [[ -d "$source_path" ]]; then
+    # Skip copying if it's already our symlink
+    if [[ -L "$source_path" ]]; then
+        local link_target=$(readlink "$source_path")
+        if [[ "$link_target" == "$dest_path" ]]; then
+            log_info "File already in repository, skipping copy: $source_path"
+        else
+            log_error "Unexpected symlink state during copy phase"
+            return 1
+        fi
+    elif [[ -d "$source_path" ]]; then
         # For directories, do selective copying
         copy_with_ignore "$source_path" "$dest_path"
     else

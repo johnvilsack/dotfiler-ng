@@ -133,9 +133,33 @@ should_ignore() {
         
         # Check if path is under ignored directory
         local pattern_abs="${pattern/#\$HOME/$HOME}"
-        if [[ "$path" == "$pattern_abs"/* ]]; then
+        if [[ "$path" == "$pattern_abs"/* ]] || [[ "$path" == "$pattern_abs" ]]; then
             return 0  # Should ignore
         fi
+        
+        # Also check if any parent directory of the path matches the pattern
+        local parent_path="$path"
+        while [[ "$parent_path" != "/" ]] && [[ "$parent_path" != "$HOME" ]]; do
+            parent_path="$(dirname "$parent_path")"
+            
+            # Convert parent to tracking format
+            local parent_as_tracked
+            if [[ "$parent_path" == "$HOME"* ]]; then
+                parent_as_tracked='$HOME'"${parent_path#$HOME}"
+            else
+                parent_as_tracked="$parent_path"
+            fi
+            
+            # Check if parent matches pattern
+            if [[ "$parent_as_tracked" == "$pattern" ]]; then
+                return 0  # Should ignore
+            fi
+            
+            # Check glob patterns on parent
+            case "$parent_as_tracked" in
+                $pattern) return 0 ;;
+            esac
+        done
         
         # Check glob patterns against both formats
         case "$path_as_tracked" in
@@ -394,4 +418,119 @@ remove_from_ignore_list() {
     fi
     
     rm "$temp_file"
+}
+
+# Cleanup ignored files that are currently managed (symlinked or in repo)
+# This implements Option A: complete un-management
+cleanup_ignored_files() {
+    if [[ ! -f "$IGNORELIST" ]] || [[ ! -f "$TRACKEDFOLDERLIST" ]]; then
+        return 0
+    fi
+    
+    if [[ -z "$DOTFILESPATH" ]]; then
+        log_error "DOTFILESPATH environment variable is not set"
+        return 1
+    fi
+    
+    if [[ -z "$OS" ]]; then
+        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    fi
+    
+    local repo_files_dir="$DOTFILESPATH/$OS/files"
+    
+    # Track patterns and paths to remove from tracking
+    local temp_tracking_file
+    temp_tracking_file=$(mktemp)
+    
+    log_info "Cleaning up ignored files from management..."
+    
+    # First, scan all files in the repository and remove ignored ones
+    if [[ -d "$repo_files_dir" ]]; then
+        find "$repo_files_dir" -type f | while read -r repo_file; do
+            # Convert repo path back to original path
+            local relative_path="${repo_file#$repo_files_dir/}"
+            local original_path
+            
+            if [[ "$relative_path" == HOME/* ]]; then
+                # It's a HOME file
+                original_path="$HOME/${relative_path#HOME/}"
+            else
+                # It's a system file
+                original_path="/$relative_path"
+            fi
+            
+            # Check if this file should be ignored
+            if should_ignore "$original_path"; then
+                log_info "Found ignored file in repo: $repo_file (original: $original_path)"
+                
+                # If the original file is symlinked to our repo, restore it
+                if [[ -L "$original_path" ]]; then
+                    local link_target=$(readlink "$original_path")
+                    if [[ "$link_target" == "$repo_file" ]]; then
+                        log_info "Restoring symlink to hard file: $original_path"
+                        
+                        # Determine if we need sudo
+                        local needs_sudo=false
+                        if [[ "$original_path" != "$HOME"* ]] && [[ "$original_path" == "/"* ]]; then
+                            needs_sudo=true
+                        fi
+                        
+                        # Replace symlink with repo content
+                        if [[ "$needs_sudo" == true ]]; then
+                            sudo rm "$original_path"
+                            sudo cp -r "$repo_file" "$original_path"
+                        else
+                            rm "$original_path"
+                            cp -r "$repo_file" "$original_path"
+                        fi
+                        
+                        log_success "Restored: $original_path"
+                    fi
+                fi
+                
+                # Remove from repo
+                log_info "Removing ignored file from repository: $repo_file"
+                rm -f "$repo_file"
+                
+                # Clean up empty parent directories
+                local parent_dir="$(dirname "$repo_file")"
+                while [[ "$parent_dir" != "$repo_files_dir" ]] && [[ "$parent_dir" != "/" ]]; do
+                    if [[ -d "$parent_dir" ]] && [[ -z "$(ls -A "$parent_dir" 2>/dev/null)" ]]; then
+                        rmdir "$parent_dir" 2>/dev/null
+                        log_info "Removed empty directory: $parent_dir"
+                        parent_dir="$(dirname "$parent_dir")"
+                    else
+                        break
+                    fi
+                done
+            fi
+        done
+    fi
+    
+    # Then, clean up tracking list of any patterns that would be completely ignored
+    while IFS= read -r tracked_line; do
+        [[ -z "$tracked_line" ]] && continue
+        
+        # Expand $HOME in tracked path to get actual path
+        local actual_path="${tracked_line/#\$HOME/$HOME}"
+        
+        # Check if this tracked item itself should be ignored (not just files within it)
+        if should_ignore "$actual_path"; then
+            log_info "Removing completely ignored tracked item from tracking: $tracked_line"
+        else
+            # Keep this in tracking list
+            echo "$tracked_line" >> "$temp_tracking_file"
+        fi
+        
+    done < "$TRACKEDFOLDERLIST"
+    
+    # Update tracking list
+    cat "$temp_tracking_file" > "$TRACKEDFOLDERLIST"
+    rm "$temp_tracking_file"
+    
+    # Remove tracking file if empty
+    if [[ ! -s "$TRACKEDFOLDERLIST" ]]; then
+        rm "$TRACKEDFOLDERLIST"
+        log_info "No more tracked files, removed tracking list"
+    fi
 }

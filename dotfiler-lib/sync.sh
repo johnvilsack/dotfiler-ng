@@ -4,6 +4,9 @@ cmd_sync() {
         return 1
     fi
     
+    # First cleanup any ignored files that are currently managed
+    cleanup_ignored_files
+    
     echo "[INFO] Syncing tracked dotfiles (new items only)..."
     local synced_count=0
     
