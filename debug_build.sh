@@ -23,7 +23,7 @@ if [[ -z "${OS:-}" ]]; then
     OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 fi
 
-local dotfiles_base="$DOTFILESPATH/$OS/files"
+dotfiles_base="$DOTFILESPATH/$OS/files"
 echo "2. Repository structure:"
 echo "   Base: $dotfiles_base"
 if [[ -d "$dotfiles_base" ]]; then
@@ -42,15 +42,15 @@ find "$dotfiles_base" -name "*foo.csv*" -type f | while read -r file; do
     echo "   FOUND: $file"
     
     # Test the path conversion logic
-    local dir=$(dirname "$file")
-    local dir_name=$(basename "$(dirname "$file")")
-    local relative_from_dir="${file#$dir/}"
+    dir=$(dirname "$file")
+    dir_name=$(basename "$(dirname "$file")")
+    relative_from_dir="${file#$dir/}"
     
     echo "     dir: $dir"
-    echo "     dir_name: $dir_name"
+    echo "     dir_name: $dir_name" 
     echo "     relative_from_dir: $relative_from_dir"
     
-    local original_path
+    original_path=""
     if [[ "$dir_name" == "HOME" ]]; then
         original_path="$HOME/$relative_from_dir"
     else
