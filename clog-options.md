@@ -1,0 +1,6 @@
+  clog --timestamp INFO "Message with timestamp"
+  clog --pid WARNING "Message with process ID"
+  clog --json INFO "JSON formatted output"
+  clog --tag "my-app" ERROR "Custom syslog tag"
+  clog --no-color INFO "Plain text output"
+  clog --no-syslog INFO "Console only, no syslog"

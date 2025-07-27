@@ -47,10 +47,12 @@ log_info "Installing dotfiler from local repository for testing..."
 mkdir -p "$BIN_DIR"
 mkdir -p "$LIB_DIR"
 
-# Copy main executable
-log_info "Installing main executable..."
+# Copy main executables
+log_info "Installing main executables..."
 cp "$REPO_DIR/dotfiler" "$BIN_DIR/dotfiler"
+cp "$REPO_DIR/clog" "$BIN_DIR/clog"
 chmod +x "$BIN_DIR/dotfiler"
+chmod +x "$BIN_DIR/clog"
 
 # Copy library files
 log_info "Installing library files..."
@@ -86,6 +88,18 @@ mkdir -p "$DOTFILESPATH"
 log_success "Dotfiler installed successfully!"
 log_info "Installation location: $BIN_DIR/dotfiler"
 log_info "Library location: $LIB_DIR"
+
+# Refresh PATH to make clog available immediately
+export PATH="$BIN_DIR:$PATH"
+
+# Test if clog is now available and report
+if command -v clog >/dev/null 2>&1; then
+    log_success "✓ clog command is available"
+    # Demonstrate clog is working
+    clog SUCCESS "Enhanced logging now active!"
+else
+    log_warning "clog command not found in PATH"
+fi
 
 if [[ "$DOTFILESPATH_SET" == true ]]; then
     log_warning "Please restart your shell or run: source ~/.bashrc (or ~/.zshrc)"

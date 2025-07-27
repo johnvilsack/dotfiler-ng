@@ -24,7 +24,20 @@ cmd_newsync() {
             [[ "$source_with_slash" != */ ]] && source_with_slash="$source_with_slash/"
             
             item_relative="${item#$source_with_slash}"
-            [[ "$item_relative" == "$item" ]] && continue  # Skip if same (root dir)
+            
+            # Enhanced validation to prevent directory loops
+            if [[ "$item_relative" == "$item" ]]; then
+                continue  # Skip if prefix removal failed (root dir or unrelated path)
+            fi
+            
+            if [[ -z "$item_relative" ]]; then
+                continue  # Skip empty relative paths
+            fi
+            
+            if [[ "$item_relative" == *"$source_path"* ]]; then
+                log_warning "Skipping potentially recursive path: $item"
+                continue  # Skip paths that could create loops
+            fi
             
             # Ensure proper path joining
             if [[ "$item_relative" == /* ]]; then

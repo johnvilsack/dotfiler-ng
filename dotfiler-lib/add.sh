@@ -77,6 +77,11 @@ cmd_add() {
     
     echo "[INFO] Found: $source_path"
     
+    # Validate the path for security
+    if ! validate_path "$source_path" "source path"; then
+        return 1
+    fi
+    
     # Check for conflicts with ignore patterns
     if find_conflicting_ignore_patterns "$source_path"; then
         echo ""
