@@ -13,7 +13,7 @@ cmd_newsync() {
     
     if [[ -d "$source_path" ]]; then
         # For directories, find new files/folders
-        find "$source_path" -type f -o -type d | while read -r item; do
+        find "$source_path" -type f -o -type d -o -type l | while read -r item; do
             # Check if this item should be ignored
             if should_ignore "$item"; then
                 continue
@@ -50,6 +50,11 @@ cmd_newsync() {
                 if [[ -d "$item" ]]; then
                     echo "[INFO] Creating new directory: $dest_item"
                     mkdir -p "$dest_item"
+                elif [[ -L "$item" ]]; then
+                    echo "[INFO] Adding new symlink (copying target): $dest_item"
+                    mkdir -p "$(dirname "$dest_item")"
+                    # Copy the content that the symlink points to, not the symlink itself
+                    cp -L "$item" "$dest_item"
                 else
                     echo "[INFO] Adding new file: $dest_item"
                     mkdir -p "$(dirname "$dest_item")"

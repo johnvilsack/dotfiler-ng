@@ -1,9 +1,27 @@
 cmd_build() {
+    local repo_first=false
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --repo-first)
+                repo_first=true
+                shift
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                return 1
+                ;;
+        esac
+    done
+    
     # First cleanup any ignored files that are currently managed
     cleanup_ignored_files
     
-    # Auto-sync new files before building symlinks
-    if [[ -f "$TRACKEDFOLDERLIST" ]]; then
+    # Auto-sync new files before building symlinks (unless --repo-first is specified)
+    if [[ "$repo_first" == true ]]; then
+        log_info "Repo-first mode: Skipping sync, building symlinks from repository only"
+    elif [[ -f "$TRACKEDFOLDERLIST" ]]; then
         log_info "Syncing new files before building symlinks..."
         
         # Call sync logic directly without the error check since we already know tracked files exist

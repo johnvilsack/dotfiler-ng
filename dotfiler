@@ -36,7 +36,8 @@ COMMANDS:
     ignore, i <file>  Add a file or directory to ignore list
     unmanage, u <file> Stop managing a tracked file (exact match only)
     cleanup, c        Remove all ignored files from repository
-    build, b         Build dotfiles by linking all tracked files
+    build, b [--repo-first]  Build dotfiles by linking all tracked files
+                                 --repo-first: Skip sync, build from repo only (for fresh installs)
     sync, s           Link all dotfiles to their destinations
     list, l           List all tracked dotfiles
     version           Show version information
@@ -52,6 +53,7 @@ EXAMPLES:
     $PROGRAM_NAME list
     $PROGRAM_NAME sync
     $PROGRAM_NAME build
+    $PROGRAM_NAME build --repo-first
 
 ENVIRONMENT:
     DOTFILESPATH
@@ -77,6 +79,7 @@ main() {
             cmd_add "$@"
             ;;
         "build"|"b")
+            shift
             cmd_build "$@"
             ;;
         "list"|"l")
