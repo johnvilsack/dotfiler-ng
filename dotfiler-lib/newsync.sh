@@ -51,10 +51,18 @@ cmd_newsync() {
                     echo "[INFO] Creating new directory: $dest_item"
                     mkdir -p "$dest_item"
                 elif [[ -L "$item" ]]; then
-                    echo "[INFO] Adding new symlink (copying target): $dest_item"
-                    mkdir -p "$(dirname "$dest_item")"
-                    # Copy the content that the symlink points to, not the symlink itself
-                    cp -L "$item" "$dest_item"
+                    # Check if symlink target exists
+                    if [[ -e "$item" ]]; then
+                        echo "[INFO] Adding new symlink (copying target): $dest_item"
+                        mkdir -p "$(dirname "$dest_item")"
+                        # Copy the content that the symlink points to, not the symlink itself
+                        cp -L "$item" "$dest_item"
+                    else
+                        log_warning "Skipping broken symlink: $item -> $(readlink "$item" 2>/dev/null || echo "unknown")"
+                        # Remove the broken symlink to clean up
+                        log_info "Removing broken symlink: $item"
+                        rm -f "$item"
+                    fi
                 else
                     echo "[INFO] Adding new file: $dest_item"
                     mkdir -p "$(dirname "$dest_item")"
@@ -69,9 +77,23 @@ cmd_newsync() {
         fi
         
         if [[ ! -e "$dest_base" ]]; then
-            echo "[INFO] Adding new file: $dest_base"
-            mkdir -p "$(dirname "$dest_base")"
-            cp "$source_path" "$dest_base"
+            if [[ -L "$source_path" ]]; then
+                # Handle symlinks (same logic as directory scan)
+                if [[ -e "$source_path" ]]; then
+                    echo "[INFO] Adding new symlink (copying target): $dest_base"
+                    mkdir -p "$(dirname "$dest_base")"
+                    cp -L "$source_path" "$dest_base"
+                else
+                    log_warning "Skipping broken symlink: $source_path -> $(readlink "$source_path" 2>/dev/null || echo "unknown")"
+                    # Remove the broken symlink to clean up
+                    log_info "Removing broken symlink: $source_path"
+                    rm -f "$source_path"
+                fi
+            else
+                echo "[INFO] Adding new file: $dest_base"
+                mkdir -p "$(dirname "$dest_base")"
+                cp "$source_path" "$dest_base"
+            fi
         fi
     fi
 }

@@ -173,6 +173,104 @@ dotfiler build
 dotfiler build  # Automatically syncs and links files
 ```
 
+## How Dotfiler Works: Order of Operations
+
+Understanding how dotfiler processes files helps avoid common pitfalls:
+
+### `dotfiler build` Process
+
+**Phase 1: Cleanup** 🧹
+- Removes any ignored files that are currently managed
+- Cleans up broken symlinks automatically
+
+**Phase 2: Sync New Files** 📥 *(unless `--repo-first`)*
+```bash
+# For each tracked item (from tracked-folders.txt):
+1. ✅ Check ignore list → Skip if ignored
+2. ✅ Check if exists on filesystem → Skip if missing
+3. 🔍 Scan directories recursively:
+   - ✅ Check each file against ignore list → Skip if ignored
+   - 📋 Copy new files to repo (existing files skipped)
+```
+
+**Phase 3: Create Symlinks** 🔗
+```bash
+# For each file in repository:
+1. ✅ Check ignore list → Skip if ignored
+2. 🔗 Create symlink: filesystem_path → repo_file
+3. ⚠️  Overwrites existing files with symlinks
+```
+
+### Key Behaviors
+
+- **Triple Ignore Checking**: Ignore patterns checked at tracked-item, individual-file, and symlink levels
+- **Individual File Symlinks**: Each file gets its own symlink (directories are never symlinked)
+- **Repo Authority**: Build phase uses repository as source of truth
+- **New Files Only**: Sync only copies files that don't exist in repo yet
+
+## Safe File and Directory Management
+
+### ❌ **Wrong Way** (Creates Problems)
+```bash
+# DON'T: Delete files directly - they'll recreate on other machines
+rm ~/.config/some-app/unwanted-file.conf
+dotfiler build  # File returns from repo!
+
+# DON'T: Delete from repo directly - symlinks break
+rm ~/.dotfiles/mac/files/HOME/.config/some-app/file.conf
+# Now ~/.config/some-app/file.conf is a broken symlink
+```
+
+### ✅ **Right Way**: Proper Deletion Process
+
+**To Remove Individual Files:**
+```bash
+# 1. Remove from dotfiler management
+dotfiler remove ~/.config/some-app/unwanted-file.conf
+
+# 2. Delete the file (now it's a regular file, not symlinked)
+rm ~/.config/some-app/unwanted-file.conf
+```
+
+**To Remove Entire Directories:**
+```bash
+# 1. Remove from dotfiler management  
+dotfiler remove ~/.config/some-app
+
+# 2. Delete the directory (now it's regular files, not symlinked)
+rm -rf ~/.config/some-app
+```
+
+**To Stop Tracking But Keep Files:**
+```bash
+# Use unmanage - converts symlinks back to regular files
+dotfiler unmanage ~/.config/some-app
+# Files remain on filesystem as regular files
+```
+
+### 🚨 **Edge Cases and Multi-Machine Scenarios**
+
+**Problem**: Files deleted on Machine A recreate from repo on Machine B
+```bash
+# Machine A: Delete file incorrectly
+rm ~/.config/app/file.conf  # Oops! File still in repo
+
+# Machine B: Next build
+dotfiler build  # File recreates from repo!
+```
+
+**Solution**: Always use `dotfiler remove` first
+```bash
+# Machine A: Proper deletion
+dotfiler remove ~/.config/app/file.conf
+rm ~/.config/app/file.conf
+
+# Machine B: Next build  
+dotfiler build  # File stays gone - not in repo anymore
+```
+
+**Pro Tip**: Use `dotfiler list` to see what's currently tracked before making changes.
+
 ## Installation Options
 
 ### Standard Installation

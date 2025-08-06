@@ -38,7 +38,8 @@ cmd_build() {
                 continue
             fi
 
-            if [[ ! -e "$source_path" ]]; then
+            # Check if source exists (or is a symlink, even if broken)
+            if [[ ! -e "$source_path" ]] && [[ ! -L "$source_path" ]]; then
                 log_warning "Source missing: $line"
                 continue
             fi

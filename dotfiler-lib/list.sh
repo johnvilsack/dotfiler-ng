@@ -13,9 +13,18 @@ cmd_list() {
     # expand literal $HOME into this machine’s real $HOME
     source_path="${line/#\$\HOME/$HOME}"
 
-    if [[ ! -e "$source_path" ]]; then
+    # Check if source exists (or is a symlink, even if broken)
+    if [[ ! -e "$source_path" ]] && [[ ! -L "$source_path" ]]; then
         echo "[WARNING] Source missing: $line"
         continue
     fi
+    
+    # Handle broken symlinks
+    if [[ -L "$source_path" ]] && [[ ! -e "$source_path" ]]; then
+        echo "[WARNING] Broken symlink: $line -> $(readlink "$source_path" 2>/dev/null || echo "unknown")"
+        continue
+    fi
+    
+    echo "  - $line"
     done < "$TRACKEDFOLDERLIST"
 }

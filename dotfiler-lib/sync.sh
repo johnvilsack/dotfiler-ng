@@ -21,7 +21,8 @@ cmd_sync() {
             continue
         fi
 
-        if [[ ! -e "$source_path" ]]; then
+        # Check if source exists (or is a symlink, even if broken)
+        if [[ ! -e "$source_path" ]] && [[ ! -L "$source_path" ]]; then
             echo "[WARNING] Source missing: $line"
             continue
         fi
