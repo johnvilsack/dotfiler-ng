@@ -54,7 +54,7 @@ create_default_config() {
 # Generated on $(date)
 
 # Repository path (where dotfiles are stored)
-REPO_PATH="${DEFAULT_REPO_PATH}"
+REPO_PATH="\${DOTFILESPATH:-\$HOME/github}/dotfiles"
 
 # Operating system (auto-detected, can override)
 OS="$(get_os)"
