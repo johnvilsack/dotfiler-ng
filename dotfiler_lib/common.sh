@@ -170,7 +170,7 @@ safe_copy() {
 get_os() {
     case "$(uname -s)" in
         Darwin*)
-            echo "darwin"
+            echo "mac"
             ;;
         Linux*)
             echo "linux"

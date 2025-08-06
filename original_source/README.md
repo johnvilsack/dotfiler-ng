@@ -123,7 +123,7 @@ Dotfiler organizes files in your repository using this structure:
 
 ```
 $DOTFILESPATH/
-├── darwin/files/          # macOS files
+├── $OS/files/          # macOS files
 │   ├── HOME/             # Files from $HOME
 │   │   ├── .zshrc
 │   │   └── .config/

@@ -4,7 +4,7 @@
 
 # Configuration defaults
 readonly DEFAULT_CONFIG_DIR="$HOME/.config/dotfiler"
-readonly DEFAULT_REPO_PATH="${GITHUBPATH:-$HOME/github}/dotfiles"
+readonly DEFAULT_REPO_PATH="${DOTFILESPATH:-$HOME/github}/dotfiles"
 
 # Config file paths
 CONFIG_DIR="${DOTFILER_CONFIG_DIR:-$DEFAULT_CONFIG_DIR}"
@@ -58,9 +58,6 @@ REPO_PATH="${DEFAULT_REPO_PATH}"
 
 # Operating system (auto-detected, can override)
 OS="$(get_os)"
-
-# Machine-specific identifier (for future use)
-MACHINE_ID="$(hostname -s)"
 
 # Sync behavior
 SYNC_DELETIONS=true
@@ -128,7 +125,7 @@ set_config() {
         # Update existing value or add new one
         if grep -q "^$key=" "$CONFIG_FILE"; then
             # Use different sed syntax for macOS vs Linux
-            if [[ "$OS" == "darwin" ]]; then
+            if [[ "$OS" == "mac" ]]; then
                 sed -i '' "s|^$key=.*|$key=$value|" "$CONFIG_FILE"
             else
                 sed -i "s|^$key=.*|$key=$value|" "$CONFIG_FILE"
@@ -152,7 +149,7 @@ validate_config() {
     fi
     
     # Check OS is valid
-    if [[ "$OS" != "darwin" && "$OS" != "linux" ]]; then
+    if [[ "$OS" != "mac" && "$OS" != "linux" ]]; then
         log_error "Unknown operating system: $OS"
         valid=false
     fi
