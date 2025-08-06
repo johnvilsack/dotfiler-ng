@@ -76,9 +76,9 @@ get_repo_path() {
     local path="$1"
     local normalized="$(normalize_path "$path")"
     
-    # If path starts with $HOME, store relative to $HOME
+    # If path starts with $HOME, store relative to HOME (literal string, not variable)
     if [[ "$normalized" == "$HOME"* ]]; then
-        echo "\$HOME${normalized#$HOME}"
+        echo "HOME${normalized#$HOME}"
     else
         # Store absolute paths as-is
         echo "$normalized"
@@ -88,7 +88,12 @@ get_repo_path() {
 # Convert repo path back to filesystem path
 get_filesystem_path() {
     local repo_path="$1"
-    expand_path "$repo_path"
+    # Replace literal HOME with $HOME
+    if [[ "$repo_path" == "HOME"* ]]; then
+        echo "$HOME${repo_path#HOME}"
+    else
+        echo "$repo_path"
+    fi
 }
 
 # Check if path is ignored

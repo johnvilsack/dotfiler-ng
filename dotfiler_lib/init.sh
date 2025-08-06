@@ -15,7 +15,7 @@ cmd_init() {
     
     # Set defaults if not already set
     : ${DEFAULT_CONFIG_DIR:="$HOME/.config/dotfiler"}
-    : ${DEFAULT_REPO_PATH:="${DOTFILESPATH:-$HOME/github}/dotfiles"}
+    : ${DEFAULT_REPO_PATH:="${DOTFILESPATH:-$HOME/github/dotfiles}"}
     : ${CONFIG_DIR:="${DOTFILER_CONFIG_DIR:-$DEFAULT_CONFIG_DIR}"}
     : ${CONFIG_FILE:="$CONFIG_DIR/config"}
     : ${TRACKED_ITEMS:="$CONFIG_DIR/tracked.conf"}
@@ -53,7 +53,7 @@ cmd_init() {
     fi
     
     # Check if config files exist in default repo location (where they would be synced)
-    local default_repo_config_dir="${DEFAULT_REPO_PATH}/${OS:-$(get_os)}/files/\$HOME/.config/dotfiler"
+    local default_repo_config_dir="${DEFAULT_REPO_PATH}/${OS:-$(get_os)}/files/.config/dotfiler"
     if [[ "${DEBUG:-0}" == "1" ]]; then
         echo "DEBUG: Checking for existing config in: $default_repo_config_dir"
         echo "DEBUG: Directory exists: $(if [[ -d "$default_repo_config_dir" ]]; then echo "YES"; else echo "NO"; fi)"
@@ -123,7 +123,7 @@ setup_fresh_install() {
             # Create directory structure
             ensure_dir "$repo_path"
             ensure_dir "$repo_path/$OS/files"
-            ensure_dir "$repo_path/$OS/files/\$HOME"
+            ensure_dir "$repo_path/$OS/files/HOME"
             
             # Initialize git repository
             cd "$repo_path"
@@ -198,7 +198,7 @@ setup_existing_repo() {
     done
     
     # Look for existing config files in repo (where they would be synced)
-    local repo_config_dir="$repo_path/${OS:-$(get_os)}/files/\$HOME/.config/dotfiler"
+    local repo_config_dir="$repo_path/${OS:-$(get_os)}/files/.config/dotfiler"
     
     if [[ -d "$repo_config_dir" && -f "$repo_config_dir/config" ]]; then
         log_info "Found existing configuration in repository"
@@ -342,7 +342,7 @@ EOF
     touch "$DELETED_ITEMS"
     
     # Also save config to repository for portability (in the correct sync location)
-    local repo_config_dir="$repo_path/${OS:-$(get_os)}/files/\$HOME/.config/dotfiler"
+    local repo_config_dir="$repo_path/${OS:-$(get_os)}/files/.config/dotfiler"
     ensure_dir "$repo_config_dir"
     cp "$CONFIG_FILE" "$repo_config_dir/"
     cp "$IGNORED_ITEMS" "$repo_config_dir/"
@@ -425,7 +425,7 @@ change_repo_path() {
 # Import from repository
 import_from_repository() {
     local repo_path="$(get_config REPO_PATH)"
-    local repo_config_dir="$repo_path/${OS:-$(get_os)}/files/\$HOME/.config/dotfiler"
+    local repo_config_dir="$repo_path/${OS:-$(get_os)}/files/.config/dotfiler"
     
     if [[ -d "$repo_config_dir" ]]; then
         import_repo_config "$repo_config_dir"

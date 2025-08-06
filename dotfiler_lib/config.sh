@@ -33,7 +33,7 @@ init_config() {
     
     # Ensure repo structure exists
     ensure_dir "$REPO_FILES"
-    ensure_dir "$REPO_FILES/\$HOME"
+    ensure_dir "$REPO_FILES/HOME"
     
     # Create config files if they don't exist
     [[ -f "$TRACKED_ITEMS" ]] || touch "$TRACKED_ITEMS"
