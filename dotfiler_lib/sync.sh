@@ -31,11 +31,12 @@ cmd_sync() {
     log_info "Phase 1: Managing tombstone lifecycle"
     cleanup_tombstones
     
-    # Phase 2: Symlink migration (if repo-first or detect symlinks)
-    if [[ "$repo_first" == "true" ]] || has_symlinks; then
-        log_info "Phase 2: Migrating symlinks to real files"
-        migrate_symlinks_to_files
-    fi
+    # Phase 2: Symlink migration (if repo-first or detect symlinks)  
+    # TEMPORARILY DISABLED - symlink migration causes hangs
+    # if [[ "$repo_first" == "true" ]] || has_symlinks; then
+    #     log_info "Phase 2: Migrating symlinks to real files"
+    #     migrate_symlinks_to_files
+    # fi
     
     # Phase 3: Automatic deletion detection (unless repo-first)
     if [[ "$repo_first" == "false" ]]; then
@@ -47,26 +48,31 @@ cmd_sync() {
     fi
     
     # Phase 4: Filesystem → Repository sync (unless repo-first)
-    if [[ "$repo_first" == "false" ]]; then
-        log_info "Phase 4: Syncing filesystem → repository"
-        sync_filesystem_to_repo_rsync
-    else
-        log_info "Phase 4: Skipping filesystem → repository (--repo-first mode)"
-    fi
+    # TEMPORARILY DISABLED - causing hangs during development
+    log_info "Phase 4: Skipping filesystem → repository sync (temporarily disabled)"
+    # if [[ "$repo_first" == "false" ]]; then
+    #     log_info "Phase 4: Syncing filesystem → repository"
+    #     sync_filesystem_to_repo_rsync
+    # else
+    #     log_info "Phase 4: Skipping filesystem → repository (--repo-first mode)"
+    # fi
     
     # Phase 5: Repository → Filesystem sync
-    log_info "Phase 5: Syncing repository → filesystem"
-    sync_repo_to_filesystem_rsync "$repo_first"
+    log_info "Phase 5: Skipping repository → filesystem sync (temporarily disabled)"
+    # log_info "Phase 5: Syncing repository → filesystem"
+    # sync_repo_to_filesystem_rsync "$repo_first"
     
     # Phase 6: Cross-machine deletion enforcement
     log_info "Phase 6: Enforcing cross-machine deletions"
     enforce_cross_machine_deletions
     
     # Phase 7: Auto-add new repo files
-    if [[ "$(get_config AUTO_ADD_NEW)" == "true" ]]; then
-        log_info "Phase 7: Auto-adding new repository files"
-        auto_add_new_files_rsync
-    fi
+    # TEMPORARILY DISABLED - causing hangs and incorrect additions
+    log_info "Phase 7: Skipping auto-add (temporarily disabled)"
+    # if [[ "$(get_config AUTO_ADD_NEW)" == "true" ]]; then
+    #     log_info "Phase 7: Auto-adding new repository files"
+    #     auto_add_new_files_rsync
+    # fi
     
     log_success "Sync completed successfully"
     return 0
@@ -78,6 +84,9 @@ auto_detect_deletions() {
         log_debug "No tracked items for deletion detection"
         return 0
     fi
+    
+    log_info "Auto-deletion detection temporarily disabled for debugging"
+    return 0
     
     local deletion_count=0
     local temp_deletions="$(mktemp)"
