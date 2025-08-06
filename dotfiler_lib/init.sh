@@ -39,6 +39,10 @@ cmd_init() {
     # Check if config files exist in config directory
     if [[ -f "$CONFIG_FILE" && -f "$TRACKED_ITEMS" && -f "$IGNORED_ITEMS" && -f "$DELETED_ITEMS" ]]; then
         log_info "Existing configuration found in: $CONFIG_DIR"
+        # Load config before showing it
+        source "$CONFIG_FILE"
+        REPO_PATH="${REPO_PATH:-$DEFAULT_REPO_PATH}"
+        REPO_FILES="$REPO_PATH/$OS/files"
         show_config
         echo ""
         
@@ -298,7 +302,7 @@ create_fresh_config() {
     local repo_path_config
     if [[ "$repo_path" == "$(expand_path "$DEFAULT_REPO_PATH")" ]]; then
         # Use the environment variable form
-        repo_path_config='${DOTFILESPATH:-$HOME/github}/dotfiles'
+        repo_path_config='${DOTFILESPATH:-$HOME/github/dotfiles}'
     else
         # Use the provided path
         repo_path_config="$repo_path"

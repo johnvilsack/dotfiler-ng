@@ -20,6 +20,7 @@ init_config() {
     
     # Load or create main config
     if [[ -f "$CONFIG_FILE" ]]; then
+        # Don't set a default DOTFILESPATH - let the config's default work
         source "$CONFIG_FILE"
     else
         create_default_config
@@ -54,7 +55,7 @@ create_default_config() {
 # Generated on $(date)
 
 # Repository path (where dotfiles are stored)
-REPO_PATH="\${DOTFILESPATH:-\$HOME/github}/dotfiles"
+REPO_PATH="\${DOTFILESPATH:-\$HOME/github/dotfiles}"
 
 # Operating system (auto-detected, can override)
 OS="$(get_os)"
