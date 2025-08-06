@@ -41,6 +41,7 @@ cmd_sync() {
     if [[ "$repo_first" == "false" ]]; then
         log_info "Phase 3: Detecting deletions"
         auto_detect_deletions
+        log_info "Phase 3: Deletion detection complete"
     else
         log_info "Phase 3: Skipping deletion detection (--repo-first mode)"
     fi
@@ -85,8 +86,14 @@ auto_detect_deletions() {
     local filter_file="$(generate_rsync_filters)"
     
     # For each tracked item, check for deletions
+    local item_count=0
+    local total_items="$(grep -c . "$TRACKED_ITEMS" 2>/dev/null || echo 0)"
+    
     while IFS= read -r item; do
         [[ -z "$item" || "$item" == \#* ]] && continue
+        
+        ((item_count++))
+        log_debug "Checking deletions [$item_count/$total_items]: $item"
         
         local filesystem_path="$(get_filesystem_path "$item")"
         local repo_path="$REPO_FILES/$item"
@@ -94,23 +101,11 @@ auto_detect_deletions() {
         # Skip if not in repo (can't detect deletion)
         [[ ! -e "$repo_path" ]] && continue
         
-        # Use rsync to detect if file would be deleted
-        local rsync_output
-        if [[ -d "$repo_path" ]]; then
-            # Directory - check if files would be deleted
-            rsync_output="$(rsync -av --delete --dry-run --filter="merge $filter_file" "$filesystem_path/" "$repo_path/" 2>/dev/null || true)"
-        else
-            # File - check if would be deleted
-            rsync_output="$(rsync -av --delete --dry-run "$filesystem_path" "$repo_path" 2>/dev/null || true)"
-        fi
-        
-        # Look for deletion indicators
-        if echo "$rsync_output" | grep -q "deleting\|No such file"; then
-            if ! path_exists "$filesystem_path"; then
-                log_info "Auto-detected deletion: $item"
-                echo "$item" >> "$temp_deletions"
-                ((deletion_count++))
-            fi
+        # Simple existence check - if filesystem path doesn't exist, it's deleted
+        if ! path_exists "$filesystem_path"; then
+            log_info "Auto-detected deletion: $item"
+            echo "$item" >> "$temp_deletions"
+            ((deletion_count++))
         fi
         
     done < "$TRACKED_ITEMS"
@@ -199,8 +194,14 @@ sync_filesystem_to_repo_rsync() {
     local synced_count=0
     
     # Sync each tracked item using rsync
+    local sync_count=0
+    local total_sync_items="$(grep -c . "$TRACKED_ITEMS" 2>/dev/null || echo 0)"
+    
     while IFS= read -r item; do
         [[ -z "$item" || "$item" == \#* ]] && continue
+        
+        ((sync_count++))
+        log_debug "Syncing to repo [$sync_count/$total_sync_items]: $item"
         
         local filesystem_path="$(get_filesystem_path "$item")"
         local repo_path="$REPO_FILES/$item"
