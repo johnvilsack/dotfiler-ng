@@ -10,6 +10,15 @@ cmd_init() {
     log_info "Dotfiler configuration and initialization"
     echo ""
     
+    # Show what environment variables are being used
+    if [[ "${DEBUG:-0}" == "1" ]]; then
+        echo "DEBUG: DEFAULT_REPO_PATH: $DEFAULT_REPO_PATH"
+        echo "DEBUG: CONFIG_DIR: $CONFIG_DIR" 
+        echo "DEBUG: DOTFILESPATH env var: ${DOTFILESPATH:-not set}"
+        echo "DEBUG: HOME: $HOME"
+        echo "DEBUG: Current working directory: $(pwd)"
+    fi
+    
     # Check if config files exist in config directory
     if [[ -f "$CONFIG_FILE" && -f "$TRACKED_ITEMS" && -f "$IGNORED_ITEMS" && -f "$DELETED_ITEMS" ]]; then
         log_info "Existing configuration found in: $CONFIG_DIR"
@@ -24,7 +33,15 @@ cmd_init() {
     
     # Check if config files exist in default repo location
     local default_repo_config_dir="${DEFAULT_REPO_PATH}/.config/dotfiler"
-    if [[ -d "$default_repo_config_dir" ]]; then
+    if [[ "${DEBUG:-0}" == "1" ]]; then
+        echo "DEBUG: Checking for existing config in: $default_repo_config_dir"
+        echo "DEBUG: Directory exists: $(if [[ -d "$default_repo_config_dir" ]]; then echo "YES"; else echo "NO"; fi)"
+    fi
+    
+    if [[ -d "$default_repo_config_dir" && -f "$default_repo_config_dir/config" ]]; then
+        if [[ "${DEBUG:-0}" == "1" ]]; then
+            echo "DEBUG: Config file exists: YES"
+        fi
         log_info "Found existing configuration in default repository: $default_repo_config_dir"
         
         if confirm "Import configuration from repository?"; then

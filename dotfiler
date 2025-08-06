@@ -65,7 +65,14 @@ EOF
 
 # Main CLI router
 main() {
-    # Initialize configuration
+    # Handle config/init commands before initializing config
+    if [[ "${1:-}" == "config" || "${1:-}" == "init" ]]; then
+        shift
+        cmd_config "$@"
+        exit 0
+    fi
+    
+    # Initialize configuration for other commands
     init_config
     
     # Handle no arguments
@@ -99,10 +106,6 @@ main() {
         "build")
             shift
             cmd_sync "$@"  # Backward compatibility alias
-            ;;
-        "config"|"init")
-            shift
-            cmd_config "$@"
             ;;
         "list")
             cmd_list

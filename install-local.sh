@@ -17,7 +17,7 @@ echo ""
 # Run interactive configuration
 echo "Starting interactive configuration..."
 echo ""
-if command -v "$INSTALL_DIR/dotfiler" >/dev/null 2>&1; then
+if [[ -x "$INSTALL_DIR/dotfiler" ]]; then
     "$INSTALL_DIR/dotfiler" config
 else
     echo "⚠ Could not run dotfiler config automatically"

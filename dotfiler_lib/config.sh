@@ -4,7 +4,7 @@
 
 # Configuration defaults
 readonly DEFAULT_CONFIG_DIR="$HOME/.config/dotfiler"
-readonly DEFAULT_REPO_PATH="${DOTFILESPATH:-$HOME/github}/dotfiles"
+readonly DEFAULT_REPO_PATH="${DOTFILESPATH:-$HOME/github/dotfiles}"
 
 # Config file paths
 CONFIG_DIR="${DOTFILER_CONFIG_DIR:-$DEFAULT_CONFIG_DIR}"
