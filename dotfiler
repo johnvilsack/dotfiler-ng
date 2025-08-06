@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# dotfiler-ng v2.0.0 - Next-generation dotfiles manager using rsync
+# Compatible with bash 3.2+ (macOS default)
+
+set -euo pipefail
+
+# Version
+VERSION="2.0.0"
+PROGRAM_NAME="dotfiler"
+
+# Determine script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$SCRIPT_DIR/lib"
+
+# Source library files
+source "$LIB_DIR/common.sh"
+source "$LIB_DIR/config.sh"
+source "$LIB_DIR/add.sh"
+source "$LIB_DIR/ignore.sh"
+source "$LIB_DIR/remove.sh"
+source "$LIB_DIR/list.sh"
+source "$LIB_DIR/build.sh"
+source "$LIB_DIR/delete.sh"
+
+# Help function
+show_help() {
+    cat << EOF
+$PROGRAM_NAME v$VERSION - Next-generation dotfiles management with rsync
+
+USAGE:
+    $PROGRAM_NAME <command> [options]
+
+COMMANDS:
+    add <path>        Add a file or directory to tracking
+    remove <path>     Remove a file or directory from tracking
+    ignore <pattern>  Add a pattern to ignore list
+    delete <path>     Delete and tombstone a file/directory
+    build [options]   Sync dotfiles between repo and filesystem
+        --repo-first  Fresh install mode (repo overwrites filesystem)
+    list              List all tracked items
+    status            Show sync status and changes
+    version           Show version information
+    help              Show this help message
+
+EXAMPLES:
+    $PROGRAM_NAME add ~/.zshrc
+    $PROGRAM_NAME add ~/.config/nvim
+    $PROGRAM_NAME ignore "*.log"
+    $PROGRAM_NAME build
+    $PROGRAM_NAME build --repo-first
+
+CONFIG:
+    Configuration stored in: ~/.config/dotfiler/
+    Repository location: Configured during install
+
+For more information: https://github.com/johnvilsack/dotfiler-ng
+EOF
+}
+
+# Main CLI router
+main() {
+    # Initialize configuration
+    init_config
+    
+    # Handle no arguments
+    if [[ $# -eq 0 ]]; then
+        show_help
+        exit 0
+    fi
+    
+    # Parse command
+    case "${1:-}" in
+        "add")
+            shift
+            cmd_add "$@"
+            ;;
+        "remove")
+            shift
+            cmd_remove "$@"
+            ;;
+        "ignore")
+            shift
+            cmd_ignore "$@"
+            ;;
+        "delete")
+            shift
+            cmd_delete "$@"
+            ;;
+        "build")
+            shift
+            cmd_build "$@"
+            ;;
+        "list")
+            cmd_list
+            ;;
+        "status")
+            cmd_status
+            ;;
+        "version")
+            echo "$PROGRAM_NAME v$VERSION"
+            ;;
+        "help"|"-h"|"--help")
+            show_help
+            ;;
+        *)
+            log_error "Unknown command: $1"
+            echo ""
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+# Run main function
+main "$@"

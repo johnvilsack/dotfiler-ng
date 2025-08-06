@@ -103,7 +103,3 @@ tramp
 # Ignore specific local config files that shouldn't be shared
 local_*
 *.local
-mac/files/HOME/.gemini/tmp
-mac/files/HOME/.gemini/oauth_creds.json
-dotfiler-lib/output.sh
-CLAUDE.md

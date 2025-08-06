@@ -1,0 +1,3172 @@
+################## original_source/current-trackedfolders.txt START ##################
+$HOME/.bashrc
+$HOME/.claude.json
+$HOME/.config/.setup
+$HOME/.config/Brewfile
+$HOME/.config/direnv/direnv.toml
+$HOME/.config/direnv/direnvrc
+$HOME/.config/dotfiler
+$HOME/.config/espanso
+$HOME/.config/gh
+$HOME/.config/kitty
+$HOME/.config/micro/bindings.json
+$HOME/.config/micro/settings.json
+$HOME/.config/NPMFILE.txt
+$HOME/.config/pip/pip.conf
+$HOME/.config/pip/pipfile.txt
+$HOME/.config/plists
+$HOME/.config/starship.toml
+$HOME/.gemini
+$HOME/.gitconfig
+$HOME/.gitignore-global
+$HOME/.hushlogin
+$HOME/.local/zoxide
+$HOME/.nanorc
+$HOME/.ssh/config
+$HOME/.zshrc
+$HOME/Library/Application Support/Claude/claude_desktop_config.json
+################## original_source/current-trackedfolders.txt END ####################
+
+################## original_source/CHANGELOG.md START ##################
+# Changelog
+
+## [3.0.0] - 2025-08-05
+### Added
+- **New `delete` command**: Permanent file deletion with cross-system enforcement
+- **Tombstoning system**: Prevents deleted files from being resurrected on other machines
+- **Advanced deletion management**: Handles files within tracked directories that weren't individually tracked
+- **Configuration migration**: Auto-migrates from old single-file config to new multi-file system (`tracked.conf`, `ignored.conf`, `deleted.conf`)
+- **Deletion lifecycle**: 90-day active enforcement, 120-day passive protection, automatic cleanup
+
+### Changed
+- Major refactoring of configuration file handling
+- Updated README with comprehensive deletion management documentation
+- Enhanced build process to handle tombstone enforcement
+
+### Technical Details
+- 350 lines added to new `delete.sh` module
+- Updated all core modules to support new configuration system
+- Improved error handling and user prompts
+
+## [2.0.1] - 2025-08-05
+### Fixed
+- **Critical fix**: Broken symlinks were causing build crashes
+- Improved symlink validation in build process
+- Enhanced error handling in sync operations
+
+### Changed
+- Major README expansion with comprehensive documentation
+- Better handling of edge cases in file operations
+- Improved logging and debugging capabilities
+
+## [2.0.0] - 2025-08-05
+### Added
+- **`--repo-first` flag**: Revolutionary new build mode for fresh installations
+  - Prioritizes repository files over filesystem files
+  - Essential for clean setups on new machines
+  - Prevents conflicts during initial sync
+- Current state tracking files for debugging (`current-ignorelist.txt`, `current-trackedfolders.txt`)
+
+### Changed
+- Enhanced build logic to handle fresh installs intelligently
+- Improved sync behavior with new repository-first option
+- Local installer improvements
+
+### Technical Details
+- Modified `build.sh` and `newsync.sh` for new installation flow
+- Added command-line argument parsing
+
+## [1.0.1] - 2025-08-05
+### Added
+- **Local installer**: `install-local.sh` for development and testing
+- Enhanced installation options for different use cases
+
+### Fixed
+- Installation script improvements
+- Better local development workflow
+
+## [1.0.0] - 2025-08-05
+### 🎉 **Production Release**
+First stable release of dotfiler after extensive development and testing.
+
+### Core Features Stabilized
+- **File tracking and syncing**: Add, remove, and manage dotfiles across systems
+- **Intelligent symlink management**: Individual file symlinks with conflict resolution
+- **Advanced ignore system**: Gitignore-style patterns with retroactive cleanup
+- **clog integration**: Colorized logging with syslog support
+- **Cross-platform support**: macOS and Linux compatibility
+- **Robust error handling**: Safe operations with comprehensive validation
+
+### Major Components
+- Complete dotfiler CLI with all core commands (`add`, `remove`, `build`, `sync`, `list`, `ignore`)
+- Full clog logging utility with colorization and syslog integration
+- Comprehensive documentation and README
+- Installation system with remote fetch capability
+
+---
+
+## Pre-1.0.0 Development History
+
+### Phase 4: Cleanup and Stabilization (July 27 - August 5, 2025)
+#### [908bdae] Moved clog to macapps. Cleanup
+- Removed development artifacts and temporary files
+- Cleaned up clog-related files (moved to external macapps project)
+- Removed PowerShell version, test files, and debug scripts
+- **Files removed**: 726 lines across 8 files including `clog.ps1`, `demo_clog.sh`, `test.sh`
+
+### Phase 3: Advanced Features Development (July 25-26, 2025)
+#### [acd4adb] clog made - **Major Feature Addition**
+- **Added complete clog logging utility** (231 lines)
+- Colorized console output with 6 log levels (INFO, WARNING, ERROR, SUCCESS, DEBUG, TRACE)
+- Automatic syslog integration with proper priority mapping
+- Cross-platform support with environment detection
+- JSON output format support
+- **Major README expansion**: 226 new lines of comprehensive documentation
+- Enhanced common.sh with 76 lines of logging utilities
+- Added PowerShell version (`clog.ps1`) for Windows compatibility
+- Demo scripts and comprehensive testing framework
+
+#### [e9a9e5f] working! - Ignore System Completion
+- Completed ignore functionality implementation (38 lines in build.sh)
+- Major ignore.sh enhancements (70 lines added)
+- Full integration testing and validation
+
+#### [7728586] ignore logic - **Core Ignore System**
+- **Massive ignore system implementation**: 372 lines added to ignore.sh
+- Added ignore command to main dotfiler CLI (6 lines)
+- Enhanced add.sh with ignore checking (9 lines)
+- Implemented gitignore-style pattern matching
+- Recursive directory scanning with ignore pattern application
+- Retroactive cleanup of ignored files
+
+#### [c1ed06d] added ignore functionality - **Ignore Foundation**
+- **Initial ignore system**: Created ignore.sh (78 lines)
+- Added ignore command to dotfiler CLI
+- Integration with build and sync processes
+- .gitignore creation for repository
+
+### Phase 2: Core Feature Development (July 7-25, 2025)
+#### [37510bc] added remove command - **Major Feature**
+- **Complete remove functionality**: 130-line remove.sh implementation
+- Added remove command to CLI
+- File restoration and symlink management
+- Safe removal with validation and error handling
+- Added combine-script.sh utility (20 lines)
+
+#### [9408b7e] added remove feature - Enhanced Remove
+- Expanded remove functionality (44 additional lines)
+- Improved error handling and edge case management
+
+#### [f414ccf] fixed disappearing files
+- Critical bug fix in remove.sh (20 lines modified)
+- Resolved file restoration issues
+
+#### [6310aa7] fixed dosync
+- Sync system improvements in list.sh and sync.sh
+- Better file enumeration and tracking
+
+### Phase 1: Foundation and Initial Development (June 29 - July 7, 2025)
+#### [3cf79f7] init - **Major Restructure**
+- **Complete rewrite**: New modular architecture with dotfiler-lib/
+- **Core modules implemented**:
+  - `add.sh` (84 lines): File addition and tracking
+  - `build.sh` (72 lines): Symlink creation and management  
+  - `sync.sh` (29 lines): File synchronization
+  - `list.sh` (19 lines): Tracked file enumeration
+  - `newsync.sh` (42 lines): Enhanced sync operations
+  - `common.sh` (22 lines): Shared utilities
+- **New main executable**: dotfiler (95 lines) with command routing
+- Moved old implementation to archive (old/ directory)
+- Updated installation system and README
+
+#### [6b1ff56] added claude's recommendations - **Initial Implementation**
+- **First working version**: Complete dotfiles management system
+- **Core components** (510 lines total):
+  - `bin/dotfiler` (90 lines): Main CLI interface
+  - `lib/add.sh` (61 lines): File addition logic
+  - `lib/common.sh` (64 lines): Shared utilities and path handling
+  - `lib/link.sh` (117 lines): Symlink creation and management
+  - `install.sh` (31 lines): Remote installation script
+- **Original functions** preserved in separate directory
+- Added project documentation (CLAUDE.md, README.md)
+
+#### [4e88534] Initial commit
+- Repository initialization with .gitattributes
+- Basic project structure
+
+---
+
+### Development Insights
+
+**Total Development Timeline**: ~5 weeks (June 29 - August 5, 2025)
+
+**Major Development Phases**:
+1. **Foundation** (Week 1): Core architecture and basic functionality
+2. **Feature Expansion** (Weeks 2-3): Remove command, ignore system, advanced features  
+3. **Polish & Integration** (Week 4): clog integration, testing, documentation
+4. **Production Release** (Week 5): Stabilization, cleanup, versioning system
+
+**Code Growth**:
+- Started with basic dotfile management (~500 lines)
+- Grew to production system (~2000+ lines)
+- Major feature additions: ignore system (400+ lines), clog utility (300+ lines), deletion system (350+ lines)
+
+**Key Technical Decisions**:
+- Modular architecture with dotfiler-lib/ separation
+- Individual file symlinks vs directory symlinks
+- Gitignore-style ignore patterns
+- Cross-platform compatibility focus
+- Comprehensive logging and error handling
+
+
+################## original_source/CHANGELOG.md END ####################
+
+################## original_source/dotfiler START ##################
+#!/usr/bin/env bash
+# dotfiler - Main executable
+
+set -euo pipefail
+
+# Configuration files
+CONFIG_DIR="$HOME/.config/dotfiler"
+TRACKED_ITEMS="$CONFIG_DIR/tracked.conf"
+IGNORED_ITEMS="$CONFIG_DIR/ignored.conf" 
+DELETED_ITEMS="$CONFIG_DIR/deleted.conf"
+
+# Legacy support (will migrate automatically)
+TRACKEDFOLDERLIST="$CONFIG_DIR/tracked-folders.txt"
+IGNORELIST="$CONFIG_DIR/ignore-list.txt"
+
+# Determine script directory and lib path
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$(dirname "$SCRIPT_DIR")/bin/dotfiler-lib"
+
+# Source library files
+source "$LIB_DIR/common.sh"
+source "$LIB_DIR/add.sh"
+source "$LIB_DIR/remove.sh"
+source "$LIB_DIR/build.sh"
+source "$LIB_DIR/list.sh"
+source "$LIB_DIR/newsync.sh"
+source "$LIB_DIR/sync.sh"
+source "$LIB_DIR/ignore.sh"
+source "$LIB_DIR/delete.sh"
+
+# Version and metadata
+VERSION="1.0.9"
+PROGRAM_NAME="dotfiler"
+
+# Help function
+show_help() {
+    cat << EOF
+$PROGRAM_NAME v$VERSION - Simple dotfiles management
+
+USAGE:
+    $PROGRAM_NAME <command> [options]
+
+COMMANDS:
+    add, a <file>     Add a file or directory to dotfiles
+    remove, r <file>  Remove a file or directory from dotfiles
+    ignore, i <file>  Add a file or directory to ignore list
+    delete, d <file>  Permanently delete file/directory from all systems (with tombstone)
+    unmanage, u <file> Stop managing a tracked file (exact match only)
+    cleanup, c        Remove all ignored files from repository
+    build, b [--repo-first]  Build dotfiles by linking all tracked files
+                                 --repo-first: Skip sync, build from repo only (for fresh installs)
+    sync, s           Link all dotfiles to their destinations
+    list, l           List all tracked dotfiles
+    version           Show version information
+    help, -h, --help  Show this help message
+
+EXAMPLES:
+    $PROGRAM_NAME add .zshrc
+    $PROGRAM_NAME add ~/.config/nvim
+    $PROGRAM_NAME ignore .DS_Store
+    $PROGRAM_NAME ignore ~/.config/sensitive
+    $PROGRAM_NAME delete ~/.config/unwanted-app
+    $PROGRAM_NAME unmanage ~/.config/nvim
+    $PROGRAM_NAME cleanup
+    $PROGRAM_NAME list
+    $PROGRAM_NAME sync
+    $PROGRAM_NAME build
+    $PROGRAM_NAME build --repo-first
+
+ENVIRONMENT:
+    DOTFILESPATH
+    TRACKEDFOLDERLIST
+
+For more information, visit: https://github.com/johnvilsack/dotfiler
+EOF
+}
+
+# Main CLI router
+main() {
+    
+    # Handle no arguments
+    if [[ $# -eq 0 ]]; then
+        show_help
+        exit 0
+    fi
+    
+    # Parse command
+    case "${1:-}" in
+        "add"|"a")
+            shift
+            cmd_add "$@"
+            ;;
+        "build"|"b")
+            shift
+            cmd_build "$@"
+            ;;
+        "list"|"l")
+            cmd_list "$@"
+            ;;
+        "sync"|"s")
+            cmd_sync "$@"
+            ;;
+        "remove"|"r")
+            shift
+            cmd_remove "$@"
+            ;;
+        "ignore"|"i")
+            shift
+            cmd_ignore "$@"
+            ;;
+        "delete"|"d")
+            shift
+            cmd_delete "$@"
+            ;;
+        "cleanup"|"c")
+            cmd_cleanup "$@"
+            ;;
+        "unmanage"|"u")
+            shift
+            cmd_unmanage "$@"
+            ;;
+        "version")
+            echo "$PROGRAM_NAME v$VERSION"
+            ;;
+        "help"|"-h"|"--help")
+            show_help
+            ;;
+        *)
+            log_error "Unknown command: $1"
+            echo ""
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+# Run main function with all arguments
+main "$@"
+
+################## original_source/dotfiler END ####################
+
+################## original_source/install.sh START ##################
+#!/usr/bin/env bash
+# install.sh - Install dotfiler
+
+set -euo pipefail
+rm -rf /tmp/dotfiler
+
+INSTALL_DIR="${1:-$HOME/.local/bin}"
+REPO_URL="https://github.com/johnvilsack/dotfiler"
+
+echo "Installing dotfiler to $INSTALL_DIR..."
+
+# Clone or download
+if command -v git >/dev/null 2>&1; then
+    git clone "$REPO_URL" /tmp/dotfiler
+    cd /tmp/dotfiler
+else
+    echo "Git not found. Please install git first."
+    exit 1
+fi
+
+# Create install 
+mkdir -p "$INSTALL_DIR"
+
+# Copy files
+cp /tmp/dotfiler/dotfiler "$INSTALL_DIR/" && cp -rf /tmp/dotfiler/dotfiler-lib "$INSTALL_DIR/"
+chmod +x "$INSTALL_DIR/dotfiler"
+
+# Get hash of latest commit and add for future update checks
+DOTFILER_HASH_FILE="$HOME/.local/.dotfiler_last_hash"
+DOTFILER_CURRENT_HASH=$(curl -s https://api.github.com/repos/johnvilsack/dotfiler/commits/HEAD | grep '"sha"' | head -1 | cut -d'"' -f4)
+echo "$DOTFILER_CURRENT_HASH" > "$DOTFILER_HASH_FILE"
+echo "Current commit hash: $DOTFILER_CURRENT_HASH"
+
+# Cleanup
+rm -rf /tmp/dotfiler
+
+echo "dotfiler installed!"################## original_source/install.sh END ####################
+
+################## original_source/install-local.sh START ##################
+#!/usr/bin/env bash
+# install.sh - Install dotfiler
+
+set -euo pipefail
+
+INSTALL_DIR="${1:-$HOME/.local/bin}"
+REPO_URL="https://github.com/johnvilsack/dotfiler"
+
+echo "Installing dotfiler to $INSTALL_DIR..."
+
+# Copy files
+cp dotfiler "$INSTALL_DIR/" && cp -rf dotfiler-lib "$INSTALL_DIR/"
+chmod +x "$INSTALL_DIR/dotfiler"
+
+echo "dotfiler installed!"
+################## original_source/install-local.sh END ####################
+
+################## original_source/README.md START ##################
+# Dotfiler
+
+A powerful, cross-platform dotfiles management system with intelligent file tracking, ignore patterns, and enhanced logging.
+
+## Quick Install
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/johnvilsack/dotfiler/HEAD/install.sh | bash
+```
+
+## What is Dotfiler?
+
+Dotfiler is a sophisticated dotfiles management tool that helps you:
+- **Track and sync** configuration files across machines
+- **Manage complex directory structures** with selective ignore patterns  
+- **Symlink management** for seamless file updates
+- **Cross-platform support** (macOS, Linux)
+- **Enhanced logging** with colorized output and syslog integration
+
+## Core Features
+
+### 🔗 **Intelligent Symlink Management**
+- Automatically creates symlinks from your repository to system locations
+- Handles both individual files and entire directories
+- Smart conflict resolution and error handling
+
+### 🚫 **Advanced Ignore System** 
+- Gitignore-style pattern matching for files and folders
+- Supports glob patterns like `*.log`, `.DS_Store`, `**/*.tmp`
+- Retroactive ignore cleanup (removes already-tracked files)
+- Prevents accidental tracking of sensitive files
+
+### 🔄 **Automatic Sync & Build**
+- `build` command auto-syncs new files before creating symlinks
+- Handles nested directory structures intelligently
+- Prevents directory loops and corruption
+
+### 🎨 **Enhanced Logging (`clog`)**
+- Colorized console output with timestamps
+- Automatic syslog integration
+- JSON output support for structured logging
+- Cross-platform compatibility (macOS/Linux)
+
+## Commands
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `add` | Add files/directories to tracking | `dotfiler add ~/.zshrc` |
+| `remove` | Remove and restore files from tracking | `dotfiler remove ~/.config/nvim` |
+| `ignore` | Add files/patterns to ignore list | `dotfiler ignore "*.log"` |
+| `unmanage` | Stop managing specific files (exact match) | `dotfiler unmanage ~/.bashrc` |
+| `build` | Sync new files + create all symlinks | `dotfiler build` |
+| `sync` | Copy new files to repository only | `dotfiler sync` |
+| `cleanup` | Remove all ignored files from repository | `dotfiler cleanup` |
+| `list` | Show all tracked files | `dotfiler list` |
+
+## Usage Examples
+
+### Basic Workflow
+```bash
+# Add configuration files
+dotfiler add ~/.zshrc
+dotfiler add ~/.config/nvim
+dotfiler add ~/.gitconfig
+
+# Build symlinks (auto-syncs new files first)
+dotfiler build
+
+# Add ignore patterns
+dotfiler ignore .DS_Store
+dotfiler ignore "*.log"
+dotfiler ignore ~/.config/sensitive-data
+
+# Check what's being tracked
+dotfiler list
+```
+
+### Advanced Features
+```bash
+# Ignore entire directories with confirmation prompts
+dotfiler ignore ~/.config/private
+# [WARNING] Ignoring '$HOME/.config/private' would affect these tracked files:
+#   - $HOME/.config/private/secret.txt
+# This will stop managing these tracked files. Continue? (y/N): y
+
+# Unmanage specific files (exact match required)
+dotfiler unmanage ~/.config/nvim
+# [WARNING] This will stop managing '/Users/user/.config/nvim' and restore it as a regular file/directory.
+# Continue with unmanaging '/Users/user/.config/nvim'? (y/N): y
+
+# Clean up repository
+dotfiler cleanup
+```
+
+## Enhanced Logging with `clog`
+
+Dotfiler includes `clog`, a standalone colorized logging utility:
+
+```bash
+# Basic usage
+clog INFO "Application started"
+clog WARNING "Disk space low" 
+clog ERROR "Connection failed"
+clog SUCCESS "Backup completed"
+
+# With options
+clog --timestamp INFO "Timestamped message"
+clog --json ERROR "JSON formatted output"
+clog --tag "my-app" WARNING "Custom syslog tag"
+```
+
+### `clog` Features:
+- **6 log levels**: INFO, WARNING, ERROR, SUCCESS, DEBUG, TRACE
+- **Colorized output**: Different colors for each level
+- **Syslog integration**: Automatic logging with proper priorities
+- **Flexible formatting**: JSON, timestamps, process IDs
+- **Cross-platform**: Works on macOS and Linux
+- **Environment aware**: Respects `NO_COLOR`, detects TTY
+
+## File Structure
+
+Dotfiler organizes files in your repository using this structure:
+
+```
+$DOTFILESPATH/
+├── darwin/files/          # macOS files
+│   ├── HOME/             # Files from $HOME
+│   │   ├── .zshrc
+│   │   └── .config/
+│   │       └── nvim/
+│   └── etc/              # System files (/etc/*)
+└── linux/files/          # Linux files (same structure)
+```
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DOTFILESPATH` | Path to your dotfiles repository | `$HOME/.dotfiles` |
+| `CLOG_TAG` | Default syslog tag for clog | `clog` |
+| `NO_COLOR` | Disable colored output | (unset) |
+| `CLOG_NO_SYSLOG` | Disable syslog logging | (unset) |
+
+## Configuration Files
+
+- **Tracking list**: `~/.config/dotfiler/tracked-folders.txt`
+- **Ignore patterns**: `~/.config/dotfiler/ignore-list.txt`
+
+## Advanced Use Cases
+
+### Managing System Files
+```bash
+# Add system configuration (requires sudo for symlinks)
+dotfiler add /etc/hosts
+dotfiler build  # Will prompt for sudo when creating symlinks
+```
+
+### Selective Directory Management
+```bash
+# Track entire directory but ignore specific files
+dotfiler add ~/.config
+dotfiler ignore ~/.config/sensitive.key
+dotfiler ignore "~/.config/**/*.log"
+```
+
+### Cross-Machine Sync
+```bash
+# On machine A
+dotfiler add ~/.ssh/config
+dotfiler build
+
+# On machine B (with same DOTFILESPATH repo)
+dotfiler build  # Automatically syncs and links files
+```
+
+## How Dotfiler Works: Order of Operations
+
+Understanding how dotfiler processes files helps avoid common pitfalls:
+
+### `dotfiler build` Process
+
+**Phase 1: Cleanup** 🧹
+- Removes any ignored files that are currently managed
+- Cleans up broken symlinks automatically
+
+**Phase 2: Sync New Files** 📥 *(unless `--repo-first`)*
+```bash
+# For each tracked item (from tracked-folders.txt):
+1. ✅ Check ignore list → Skip if ignored
+2. ✅ Check if exists on filesystem → Skip if missing
+3. 🔍 Scan directories recursively:
+   - ✅ Check each file against ignore list → Skip if ignored
+   - 📋 Copy new files to repo (existing files skipped)
+```
+
+**Phase 3: Create Symlinks** 🔗
+```bash
+# For each file in repository:
+1. ✅ Check ignore list → Skip if ignored
+2. 🔗 Create symlink: filesystem_path → repo_file
+3. ⚠️  Overwrites existing files with symlinks
+```
+
+### Key Behaviors
+
+- **Triple Ignore Checking**: Ignore patterns checked at tracked-item, individual-file, and symlink levels
+- **Individual File Symlinks**: Each file gets its own symlink (directories are never symlinked)
+- **Repo Authority**: Build phase uses repository as source of truth
+- **New Files Only**: Sync only copies files that don't exist in repo yet
+
+## Safe File and Directory Management
+
+### ❌ **Wrong Way** (Creates Problems)
+```bash
+# DON'T: Delete files directly - they'll recreate on other machines
+rm ~/.config/some-app/unwanted-file.conf
+dotfiler build  # File returns from repo!
+
+# DON'T: Delete from repo directly - symlinks break
+rm ~/.dotfiles/mac/files/HOME/.config/some-app/file.conf
+# Now ~/.config/some-app/file.conf is a broken symlink
+```
+
+### ✅ **Right Way**: Proper Deletion Process
+
+**✅ Recommended: Use `dotfiler delete` (New!)**
+```bash
+# Permanently delete with cross-system enforcement
+dotfiler delete ~/.config/unwanted-app
+
+# What this does:
+# 1. Creates tombstone (prevents resurrection)
+# 2. Adds to ignore list (prevents re-tracking)
+# 3. Removes from repository
+# 4. Removes from tracking (if directly tracked)
+# 5. Deletes from current filesystem
+# 6. Enforces deletion on other systems for 90 days
+```
+
+**Alternative: Manual Process (Old Way)**
+```bash
+# For individual files:
+dotfiler remove ~/.config/some-app/unwanted-file.conf  # ⚠️ May fail if parent tracked
+rm ~/.config/some-app/unwanted-file.conf
+
+# For entire directories:
+dotfiler remove ~/.config/some-app
+rm -rf ~/.config/some-app
+```
+
+**To Stop Tracking But Keep Files:**
+```bash
+# Use unmanage - converts symlinks back to regular files
+dotfiler unmanage ~/.config/some-app
+# Files remain on filesystem as regular files
+```
+
+### 🚨 **Edge Cases and Multi-Machine Scenarios**
+
+**Problem**: Files deleted on Machine A recreate from repo on Machine B
+```bash
+# Machine A: Delete file incorrectly
+rm ~/.config/app/file.conf  # Oops! File still in repo
+
+# Machine B: Next build
+dotfiler build  # File recreates from repo!
+```
+
+**Solution**: Always use `dotfiler remove` first
+```bash
+# Machine A: Proper deletion
+dotfiler remove ~/.config/app/file.conf
+rm ~/.config/app/file.conf
+
+# Machine B: Next build  
+dotfiler build  # File stays gone - not in repo anymore
+```
+
+**Pro Tip**: Use `dotfiler list` to see what's currently tracked before making changes.
+
+## Advanced Deletion Management
+
+Dotfiler now includes a sophisticated deletion system with **tombstoning** to handle the "parent directory problem" and ensure deletions work correctly across multiple machines.
+
+### The Problem Solved
+
+**Before**: If you tracked `~/.config/kitty` and later wanted to delete just `unwanted.conf`:
+```bash
+# ❌ This failed - couldn't remove individual files from tracked directories
+dotfiler remove ~/.config/kitty/unwanted.conf  # Error: not tracked individually
+rm ~/.config/kitty/unwanted.conf               # File resurrects on next build!
+```
+
+**Now**: Use `dotfiler delete` for bulletproof deletion:
+```bash
+# ✅ This works perfectly
+dotfiler delete ~/.config/kitty/unwanted.conf
+# Works even though ~/.config/kitty is tracked as a directory
+```
+
+### New Configuration Files
+
+Dotfiler now uses three configuration files (auto-migrates from old format):
+- **`tracked.conf`** - Items being actively managed
+- **`ignored.conf`** - Items to permanently ignore
+- **`deleted.conf`** - Deletion tombstones with timestamps
+
+### Cross-Machine Deletion Enforcement
+
+**Scenario**: Delete file on Machine A, sync to Machine B
+```bash
+# Machine A
+dotfiler delete ~/.config/unwanted-app
+
+# Machine B (runs build within 90 days)
+dotfiler build
+# [WARNING] Enforcing deletion on this system: ~/.config/unwanted-app
+# File automatically removed on Machine B too!
+```
+
+### Tombstone Lifecycle
+
+| Days Since Deletion | Behavior |
+|---------------------|----------|
+| **0-90 days** | 🚫 **Active Enforcement** - Deleted on any system that runs build |
+| **90-120 days** | 🛡️ **Passive Protection** - Ignored if found, but not actively deleted |
+| **120+ days** | 🧹 **Auto-Cleanup** - Tombstone removed if file doesn't exist |
+
+### Advanced Use Cases
+
+**Delete files within tracked directories:**
+```bash
+dotfiler add ~/.config/kitty              # Track directory
+dotfiler delete ~/.config/kitty/debug.log # Delete specific file - works!
+```
+
+**Handle automated files that keep returning:**
+```bash
+dotfiler delete ~/.config/app/cache.db
+# If file keeps reappearing, tombstone stays active indefinitely
+# ensuring it's always ignored
+```
+
+**Clean deletion across team/multiple machines:**
+```bash
+# Team member adds unwanted file
+git pull  # Gets the deletion tombstone
+dotfiler build  # Automatically removes unwanted file locally
+```
+
+## Installation Options
+
+### Standard Installation
+```bash
+curl -fsSL https://raw.githubusercontent.com/johnvilsack/dotfiler/HEAD/install.sh | bash
+```
+
+### Development/Testing Installation
+```bash
+git clone https://github.com/johnvilsack/dotfiler.git
+cd dotfiler
+./test.sh  # Installs from local repository
+```
+
+## Compatibility
+
+- **Operating Systems**: macOS (10.12+), Linux (most distributions)
+- **Shells**: bash, zsh, fish (command-line usage)
+- **Requirements**: Standard UNIX tools (find, ln, cp, mkdir, etc.)
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Test with `./test.sh`
+4. Submit a pull request
+
+## Troubleshooting
+
+### Common Issues
+
+**Environment not set**:
+```bash
+export DOTFILESPATH="$HOME/.dotfiles"
+```
+
+**Permission issues**:
+```bash
+# Ensure proper permissions
+chmod +x ~/.local/bin/dotfiler
+chmod +x ~/.local/bin/clog
+```
+
+**Path issues**:
+```bash
+# Add to shell profile
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+```
+
+## License
+
+MIT License - see LICENSE file for details.################## original_source/README.md END ####################
+
+################## original_source/MEMORY.md START ##################
+# Dotfiler Development Memory
+
+## Conversation Summary
+
+This session focused on solving critical issues with dotfiler's deletion system and implementing comprehensive tombstone-based deletion management. The work addressed fundamental flaws in how dotfiler handled file deletions, particularly the "parent directory trap" problem.
+
+## Problems Identified and Solved
+
+### 1. Fresh Install Configuration Corruption
+**Problem**: During fresh installs, `dotfiler build` would sync default application configs into the repository before creating symlinks, potentially overwriting curated dotfiles with system defaults.
+
+**Solution**: Implemented `--repo-first` flag for build command:
+```bash
+dotfiler build --repo-first  # Skips sync, only creates symlinks from existing repo
+```
+
+### 2. Broken Symlink Crashes
+**Problem**: Dotfiler would crash when encountering broken symlinks during build operations.
+
+**Solution**: Enhanced symlink handling throughout the codebase:
+- Updated existence checks from `[[ ! -e "$path" ]]` to `[[ ! -e "$path" ]] && [[ ! -L "$path" ]]`
+- Added broken symlink detection and automatic cleanup in `newsync.sh`
+- Graceful error handling with user-friendly warnings
+
+### 3. The "Parent Directory Trap" (Critical Issue)
+**Problem**: When tracking entire directories (e.g., `~/.config/kitty`), users couldn't delete individual files within them:
+- `dotfiler remove ~/.config/kitty/unwanted.conf` would fail (not tracked individually)
+- Manual deletion would result in file resurrection on next build
+- No tombstoning system to prevent re-import
+
+**Solution**: Complete deletion management overhaul with tombstone system.
+
+## New Architecture Implementation
+
+### Configuration Files Restructure
+Migrated from ad-hoc file locations to centralized configuration:
+
+**Old System:**
+```bash
+TRACKEDFOLDERLIST="$HOME/.config/dotfiler/tracked-folders.txt"
+IGNORELIST="$HOME/.config/dotfiler/ignore-list.txt"  # Located in ignore.sh
+```
+
+**New System (in main dotfiler script):**
+```bash
+CONFIG_DIR="$HOME/.config/dotfiler"
+TRACKED_ITEMS="$CONFIG_DIR/tracked.conf"
+IGNORED_ITEMS="$CONFIG_DIR/ignored.conf"
+DELETED_ITEMS="$CONFIG_DIR/deleted.conf"
+```
+
+Auto-migration system preserves existing configurations.
+
+### Deletion Management System
+
+#### Core Components:
+
+1. **`dotfiler delete` Command** (`delete.sh`):
+   - 5-step deletion process: tombstone → ignore → repo removal → untrack → filesystem deletion
+   - Works on both files and directories
+   - Handles files within tracked parent directories
+   - Cross-system enforcement capability
+
+2. **Tombstone System** (`deleted.conf`):
+   - Format: `path|timestamp` (pipe-delimited)
+   - Auto-adds timestamps for manual entries
+   - Lifecycle management with retention policies
+
+3. **Build Integration**:
+   - `cleanup_deleted_items()` - Manages tombstone lifecycle
+   - `enforce_deletions()` - Active deletion enforcement on other systems
+   - Both run automatically during build cleanup phase
+
+#### Deletion Lifecycle:
+
+| Phase | Duration | Behavior |
+|-------|----------|----------|
+| **Active Enforcement** | 0-90 days | File deleted on any system running build |
+| **Passive Protection** | 90-120 days | File ignored if found, not actively deleted |
+| **Auto-Cleanup** | 120+ days | Tombstone removed if file doesn't exist |
+
+#### Special Cases:
+- **Automated Files**: If file reappears after 120 days, tombstone persists indefinitely
+- **Manual Entries**: Auto-timestamped on first cleanup run
+- **Cross-System**: Deletions propagate to all machines within enforcement window
+
+## System Operation Understanding
+
+### Build Process (Order of Operations):
+
+**Phase 1: Cleanup** 🧹
+```bash
+migrate_config_files()      # Migrate legacy configs
+cleanup_ignored_files()     # Remove ignored files from management
+cleanup_deleted_items()     # Manage tombstone lifecycle  
+enforce_deletions()         # Delete files marked for deletion on other systems
+```
+
+**Phase 2: Sync** 📥 *(unless `--repo-first`)*
+```bash
+# For each tracked item:
+1. Check ignore list → Skip if ignored
+2. Check existence → Skip if missing  
+3. For directories: Recursively scan files
+   - Check each file against ignore list
+   - Copy new files to repo (existing files skipped)
+```
+
+**Phase 3: Symlink Creation** 🔗
+```bash
+# For each file in repository:
+1. Check ignore list → Skip if ignored
+2. Create symlink: filesystem_path → repo_file
+3. Overwrite existing files with symlinks
+```
+
+### Key System Behaviors:
+- **Triple Ignore Checking**: Patterns checked at tracked-item, file-scan, and symlink levels
+- **Individual File Symlinks**: Never symlinks directories, only individual files
+- **Repo Authority**: Repository is source of truth for symlink creation
+- **Migration-Safe**: Auto-migrates old config format transparently
+
+## File Structure and Implementation
+
+### Core Files Modified/Created:
+- **`dotfiler`** - Main script with new config variables and delete command routing
+- **`dotfiler-lib/delete.sh`** - New deletion management system (271 lines)
+- **`dotfiler-lib/ignore.sh`** - Updated with migration logic and new variables
+- **`dotfiler-lib/build.sh`** - Integrated deletion cleanup and enforcement
+- **`dotfiler-lib/newsync.sh`** - Enhanced symlink handling for broken links
+- **All other lib files** - Updated to use new config variables
+
+### New Command Usage:
+```bash
+dotfiler delete ~/.config/unwanted-app         # Full deletion with tombstone
+dotfiler build --repo-first                    # Fresh install safe build
+dotfiler ignore ~/.config/app/debug.log        # Enhanced ignore system
+```
+
+## Integration Points Verified
+
+The deletion management system is fully integrated into the build process:
+
+1. **Automatic Execution**: `cleanup_deleted_items()` and `enforce_deletions()` are called during every `dotfiler build`
+2. **Seamless Operation**: Tombstone management happens transparently without user intervention
+3. **Cross-System Sync**: Deletion enforcement works through normal git workflow (tombstones in repo)
+4. **Error Handling**: Graceful degradation if config files are missing or corrupted
+
+## Testing and Validation
+
+The system was tested with:
+- Fresh install scenarios with `--repo-first` flag
+- Broken symlink cleanup and handling
+- Config file migration from old to new format
+- Basic delete command functionality and help integration
+
+## Outstanding Considerations
+
+The system now handles the major edge cases identified:
+- ✅ Parent directory vs individual file deletion
+- ✅ Cross-machine deletion consistency  
+- ✅ Zombie file resurrection prevention
+- ✅ Automated file persistent protection
+- ✅ Fresh install configuration corruption
+- ✅ Broken symlink error handling
+
+## Documentation
+
+Complete README documentation was added covering:
+- Order of operations explanation
+- Safe deletion procedures comparison (old vs new)
+- Advanced deletion management section
+- Cross-machine scenarios and tombstone lifecycle
+- Migration and configuration details
+
+The system is production-ready and addresses all identified issues with dotfiler's deletion and configuration management capabilities.################## original_source/MEMORY.md END ####################
+
+################## original_source/current-ignorelist.txt START ##################
+$HOME/github/dotfiler/*.test
+################## original_source/current-ignorelist.txt END ####################
+
+################## original_source/.version START ##################
+3.0.0
+################## original_source/.version END ####################
+
+################## original_source/dotfiler-lib/ignore.sh START ##################
+#!/usr/bin/env bash
+
+# Configuration files are now defined in main dotfiler script
+# Ensure config directory exists
+mkdir -p "$CONFIG_DIR"
+
+# Migration function: migrate legacy files to new format
+migrate_config_files() {
+    # Migrate tracked-folders.txt to tracked.conf
+    if [[ -f "$TRACKED_ITEMS" ]] && [[ ! -f "$TRACKED_ITEMS" ]]; then
+        log_info "Migrating tracked-folders.txt to tracked.conf"
+        cp "$TRACKED_ITEMS" "$TRACKED_ITEMS"
+    fi
+    
+    # Migrate ignore-list.txt to ignored.conf  
+    if [[ -f "$IGNORED_ITEMS" ]] && [[ ! -f "$IGNORED_ITEMS" ]]; then
+        log_info "Migrating ignore-list.txt to ignored.conf"
+        cp "$IGNORED_ITEMS" "$IGNORED_ITEMS"
+    fi
+    
+    # Create deleted.conf if it doesn't exist
+    if [[ ! -f "$DELETED_ITEMS" ]]; then
+        touch "$DELETED_ITEMS"
+    fi
+}
+
+# Check if ignoring a pattern would affect any tracked files
+find_affected_tracked_files() {
+    local ignore_pattern="$1"
+    local affected_files=()
+    
+    if [[ ! -f "$TRACKED_ITEMS" ]]; then
+        return 1
+    fi
+    
+    while IFS= read -r tracked_line; do
+        [[ -z "$tracked_line" ]] && continue
+        
+        # Convert to absolute path for comparison
+        local tracked_abs="${tracked_line/#\$HOME/$HOME}"
+        local ignore_abs="${ignore_pattern/#\$HOME/$HOME}"
+        
+        # Check if tracked file would be affected by ignore pattern
+        if [[ "$tracked_abs" == "$ignore_abs"/* ]] || [[ "$tracked_abs" == "$ignore_abs" ]]; then
+            affected_files+=("$tracked_line")
+        fi
+        
+        # Also check glob patterns
+        case "$tracked_line" in
+            $ignore_pattern) affected_files+=("$tracked_line") ;;
+        esac
+        
+    done < "$TRACKED_ITEMS"
+    
+    if [[ ${#affected_files[@]} -gt 0 ]]; then
+        log_warning "Ignoring '$ignore_pattern' would affect these tracked files:"
+        for file in "${affected_files[@]}"; do
+            echo "  - $file"
+        done
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Check if adding a file would conflict with ignore patterns
+find_conflicting_ignore_patterns() {
+    local add_path="$1"
+    local conflicting_patterns=()
+    
+    if [[ ! -f "$IGNORED_ITEMS" ]]; then
+        return 1
+    fi
+    
+    # Convert add path to tracking format
+    local add_path_tracked
+    if [[ "$add_path" == "$HOME"* ]]; then
+        add_path_tracked='$HOME'"${add_path#$HOME}"
+    else
+        add_path_tracked="$add_path"
+    fi
+    
+    while IFS= read -r pattern; do
+        [[ -z "$pattern" ]] && continue
+        
+        # Check if add path would be ignored by this pattern
+        local pattern_abs="${pattern/#\$HOME/$HOME}"
+        if [[ "$add_path" == "$pattern_abs"/* ]] || [[ "$add_path" == "$pattern_abs" ]]; then
+            conflicting_patterns+=("$pattern")
+        fi
+        
+        # Also check glob patterns
+        case "$add_path_tracked" in
+            $pattern) conflicting_patterns+=("$pattern") ;;
+        esac
+        
+    done < "$IGNORED_ITEMS"
+    
+    if [[ ${#conflicting_patterns[@]} -gt 0 ]]; then
+        log_warning "Adding '$add_path' conflicts with these ignore patterns:"
+        for pattern in "${conflicting_patterns[@]}"; do
+            echo "  - $pattern"
+        done
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Prompt user for confirmation
+prompt_user() {
+    local message="$1"
+    echo -n "$message (y/N): "
+    read -r response
+    case "$response" in
+        [yY]|[yY][eE][sS]) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+cmd_ignore() {
+    # Ensure config migration happens
+    migrate_config_files
+    
+    local target="$1"
+    
+    if [[ -z "$target" ]]; then
+        log_error "Usage: dotfiler ignore <file_or_directory>"
+        exit 1
+    fi
+    
+    # Convert to absolute path
+    if [[ "$target" == "~"* ]]; then
+        target="${target/#\~/$HOME}"
+    elif [[ "$target" != "/"* ]]; then
+        target="$(cd "$(dirname "$target")" 2>/dev/null && pwd)/$(basename "$target")"
+    fi
+    
+    # Store pattern in same format as tracking system
+    local pattern
+    if [[ "$target" == "$HOME"* ]]; then
+        pattern='$HOME'"${target#$HOME}"
+    else
+        pattern="$target"
+    fi
+    
+    # Check if already in ignore list
+    if [[ -f "$IGNORED_ITEMS" ]] && grep -Fxq "$pattern" "$IGNORED_ITEMS"; then
+        log_warning "Pattern '$pattern' is already in ignore list"
+        return 0
+    fi
+    
+    # Check for conflicts with tracked files
+    if find_affected_tracked_files "$pattern"; then
+        echo ""
+        if ! prompt_user "This will stop managing these tracked files. Continue?"; then
+            log_info "Ignore operation cancelled"
+            return 0
+        fi
+    fi
+    
+    # Add to ignore list
+    echo "$pattern" >> "$IGNORED_ITEMS"
+    log_success "Added '$pattern' to ignore list"
+    
+    # Remove any matching entries from tracking list to prevent conflicts
+    remove_matching_from_tracking "$pattern"
+    
+    # Clean up any existing files in repo that match this pattern
+    log_info "Cleaning up existing files matching this pattern..."
+    remove_ignored_from_repo "$pattern"
+}
+
+# Remove matching entries from tracking list to prevent conflicts
+remove_matching_from_tracking() {
+    local ignore_pattern="$1"
+    
+    if [[ ! -f "$TRACKED_ITEMS" ]]; then
+        return 0
+    fi
+    
+    local temp_file
+    temp_file=$(mktemp)
+    local removed_count=0
+    
+    while IFS= read -r tracked_line; do
+        [[ -z "$tracked_line" ]] && continue
+        
+        # Check if this tracked entry matches the ignore pattern
+        local should_remove=false
+        
+        # Direct match with ignore pattern
+        if [[ "$tracked_line" == "$ignore_pattern" ]]; then
+            should_remove=true
+        fi
+        
+        # Check if tracked path is under ignored directory
+        # Convert both to absolute paths for comparison
+        local tracked_abs="${tracked_line/#\$HOME/$HOME}"
+        local ignore_abs="${ignore_pattern/#\$HOME/$HOME}"
+        
+        if [[ "$tracked_abs" == "$ignore_abs"/* ]]; then
+            should_remove=true
+        fi
+        
+        # Also check glob patterns
+        case "$tracked_line" in
+            $ignore_pattern) should_remove=true ;;
+        esac
+        
+        if [[ "$should_remove" == true ]]; then
+            log_info "Removing from tracking (conflicts with ignore): $tracked_line"
+            removed_count=$((removed_count + 1))
+        else
+            echo "$tracked_line" >> "$temp_file"
+        fi
+    done < "$TRACKED_ITEMS"
+    
+    if [[ $removed_count -gt 0 ]]; then
+        # Overwrite original file
+        cat "$temp_file" > "$TRACKED_ITEMS"
+        log_success "Removed $removed_count conflicting entries from tracking list"
+        
+        # Remove tracking file if empty
+        if [[ ! -s "$TRACKED_ITEMS" ]]; then
+            rm "$TRACKED_ITEMS"
+            log_info "No more tracked files, removed tracking list"
+        fi
+    fi
+    
+    rm "$temp_file"
+}
+
+# Helper function to check if a path should be ignored
+should_ignore() {
+    local path="$1"
+    
+    # Return false (don't ignore) if ignore list doesn't exist
+    [[ ! -f "$IGNORED_ITEMS" ]] && return 1
+    
+    # Convert path to tracking format for comparison
+    local path_as_tracked
+    if [[ "$path" == "$HOME"* ]]; then
+        path_as_tracked='$HOME'"${path#$HOME}"
+    else
+        path_as_tracked="$path"
+    fi
+    
+    # Check against each pattern in ignore list
+    while IFS= read -r pattern; do
+        [[ -z "$pattern" ]] && continue
+        
+        # Direct match
+        if [[ "$path_as_tracked" == "$pattern" ]]; then
+            return 0  # Should ignore
+        fi
+        
+        # Check if path is under ignored directory
+        local pattern_abs="${pattern/#\$HOME/$HOME}"
+        if [[ "$path" == "$pattern_abs"/* ]] || [[ "$path" == "$pattern_abs" ]]; then
+            return 0  # Should ignore
+        fi
+        
+        # Also check if any parent directory of the path matches the pattern
+        local parent_path="$path"
+        while [[ "$parent_path" != "/" ]] && [[ "$parent_path" != "$HOME" ]]; do
+            parent_path="$(dirname "$parent_path")"
+            
+            # Convert parent to tracking format
+            local parent_as_tracked
+            if [[ "$parent_path" == "$HOME"* ]]; then
+                parent_as_tracked='$HOME'"${parent_path#$HOME}"
+            else
+                parent_as_tracked="$parent_path"
+            fi
+            
+            # Check if parent matches pattern
+            if [[ "$parent_as_tracked" == "$pattern" ]]; then
+                return 0  # Should ignore
+            fi
+            
+            # Check glob patterns on parent
+            case "$parent_as_tracked" in
+                $pattern) return 0 ;;
+            esac
+        done
+        
+        # Check glob patterns against both formats
+        case "$path_as_tracked" in
+            $pattern) return 0 ;;
+        esac
+        
+        case "$path" in
+            $pattern) return 0 ;;
+        esac
+        
+        # Check just filename for patterns like "*.log"
+        local filename="${path##*/}"
+        case "$filename" in
+            $pattern) return 0 ;;
+        esac
+        
+    done < "$IGNORED_ITEMS"
+    
+    return 1  # Don't ignore
+}
+
+# Remove ignored files from the dotfiles repository and handle symlinks
+remove_ignored_from_repo() {
+    local pattern="${1:-}"  # Optional: specific pattern to clean, or empty for all
+    
+    if [[ -z "$DOTFILESPATH" ]]; then
+        log_error "DOTFILESPATH environment variable is not set"
+        return 1
+    fi
+    
+    if [[ -z "$OS" ]]; then
+        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    fi
+    
+    local repo_files_dir="$DOTFILESPATH/$OS/files"
+    
+    if [[ ! -d "$repo_files_dir" ]]; then
+        log_info "No files directory found in repo: $repo_files_dir"
+        return 0
+    fi
+    
+    log_info "Scanning repository for ignored files..."
+    
+    # Also check for currently tracked files that should be ignored
+    if [[ -f "$TRACKED_ITEMS" ]]; then
+        while IFS= read -r tracked_line; do
+            [[ -z "$tracked_line" ]] && continue
+            
+            # Expand $HOME in tracked path to get actual path
+            local actual_path="${tracked_line/#\$HOME/$HOME}"
+            
+            # Check if this tracked file should be ignored
+            local should_remove=false
+            
+            if [[ -n "$pattern" ]]; then
+                # Check specific pattern
+                if should_ignore "$actual_path"; then
+                    case "$actual_path" in
+                        *$pattern*) should_remove=true ;;
+                    esac
+                    case "${actual_path#$HOME/}" in
+                        $pattern) should_remove=true ;;
+                    esac
+                fi
+            else
+                # Check all ignore patterns
+                if should_ignore "$actual_path"; then
+                    should_remove=true
+                fi
+            fi
+            
+            if [[ "$should_remove" == true ]]; then
+                log_info "Found ignored tracked file: $actual_path"
+                
+                # If it's currently symlinked, restore the original file
+                if [[ -L "$actual_path" ]]; then
+                    local link_target=$(readlink "$actual_path")
+                    
+                    # Determine expected repo path
+                    local expected_repo_path
+                    if [[ "$tracked_line" == '$HOME'* ]]; then
+                        local rel_path="${tracked_line#\$HOME/}"
+                        expected_repo_path="$repo_files_dir/HOME/$rel_path"
+                    else
+                        local rel_path="${tracked_line#/}"
+                        expected_repo_path="$repo_files_dir/$rel_path"
+                    fi
+                    
+                    # If symlinked to our repo, restore original
+                    if [[ "$link_target" == "$expected_repo_path" ]]; then
+                        log_info "Restoring original file and removing from tracking: $actual_path"
+                        
+                        # Determine if we need sudo
+                        local needs_sudo=false
+                        if [[ "$actual_path" != "$HOME"* ]] && [[ "$actual_path" == "/"* ]]; then
+                            needs_sudo=true
+                        fi
+                        
+                        # Remove symlink and restore original
+                        if [[ "$needs_sudo" == true ]]; then
+                            sudo rm "$actual_path"
+                            sudo cp -r "$expected_repo_path" "$actual_path"
+                        else
+                            rm "$actual_path"
+                            cp -r "$expected_repo_path" "$actual_path"
+                        fi
+                        
+                        log_success "Restored original file: $actual_path"
+                    fi
+                fi
+                
+                # Remove from repo if it exists
+                local repo_path
+                if [[ "$tracked_line" == '$HOME'* ]]; then
+                    local rel_path="${tracked_line#\$HOME/}"
+                    repo_path="$repo_files_dir/HOME/$rel_path"
+                else
+                    local rel_path="${tracked_line#/}"
+                    repo_path="$repo_files_dir/$rel_path"
+                fi
+                
+                if [[ -e "$repo_path" ]]; then
+                    log_info "Removing from repository: $repo_path"
+                    rm -rf "$repo_path"
+                    
+                    # Clean up empty parent directories
+                    local parent_dir="$(dirname "$repo_path")"
+                    while [[ "$parent_dir" != "$repo_files_dir" ]] && [[ "$parent_dir" != "/" ]]; do
+                        if [[ -d "$parent_dir" ]] && [[ -z "$(ls -A "$parent_dir" 2>/dev/null)" ]]; then
+                            rmdir "$parent_dir" 2>/dev/null
+                            log_info "Removed empty directory: $parent_dir"
+                            parent_dir="$(dirname "$parent_dir")"
+                        else
+                            break
+                        fi
+                    done
+                fi
+                
+                # Remove from tracking list
+                remove_from_tracking "$tracked_line"
+            fi
+            
+        done < "$TRACKED_ITEMS"
+    fi
+}
+
+# Helper function to remove a line from tracking list
+remove_from_tracking() {
+    local line_to_remove="$1"
+    
+    if [[ ! -f "$TRACKED_ITEMS" ]]; then
+        return 0
+    fi
+    
+    local temp_file
+    temp_file=$(mktemp)
+    
+    # Copy all lines except the one to remove
+    while IFS= read -r line; do
+        if [[ "$line" != "$line_to_remove" ]]; then
+            echo "$line" >> "$temp_file"
+        fi
+    done < "$TRACKED_ITEMS"
+    
+    # Overwrite original file
+    cat "$temp_file" > "$TRACKED_ITEMS"
+    rm "$temp_file"
+    
+    log_info "Removed from tracking: $line_to_remove"
+    
+    # Remove tracking file if empty
+    if [[ ! -s "$TRACKED_ITEMS" ]]; then
+        rm "$TRACKED_ITEMS"
+        log_info "No more tracked files, removed tracking list"
+    fi
+}
+
+# Command to clean up all ignored files from the repository
+cmd_cleanup() {
+    if [[ ! -f "$IGNORED_ITEMS" ]]; then
+        log_info "No ignore list found - nothing to clean up"
+        return 0
+    fi
+    
+    log_info "Cleaning up all ignored files from repository..."
+    remove_ignored_from_repo
+    log_success "Cleanup completed"
+}
+
+# Command to unmanage specific files (like ignore cleanup but for exact matches only)
+cmd_unmanage() {
+    local target="$1"
+    
+    if [[ -z "$target" ]]; then
+        log_error "Usage: dotfiler unmanage <file_or_directory>"
+        return 1
+    fi
+    
+    # Convert to absolute path
+    if [[ "$target" == "~"* ]]; then
+        target="${target/#\~/$HOME}"
+    elif [[ "$target" != "/"* ]]; then
+        target="$(cd "$(dirname "$target")" 2>/dev/null && pwd)/$(basename "$target")"
+    fi
+    
+    # Convert to tracking format
+    local target_tracked
+    if [[ "$target" == "$HOME"* ]]; then
+        target_tracked='$HOME'"${target#$HOME}"
+    else
+        target_tracked="$target"
+    fi
+    
+    # Check if this exact path is being tracked
+    if [[ ! -f "$TRACKED_ITEMS" ]]; then
+        log_error "No tracked files found"
+        return 1
+    fi
+    
+    local is_tracked=false
+    while IFS= read -r tracked_line; do
+        [[ -z "$tracked_line" ]] && continue
+        if [[ "$tracked_line" == "$target_tracked" ]]; then
+            is_tracked=true
+            break
+        fi
+    done < "$TRACKED_ITEMS"
+    
+    if [[ "$is_tracked" != true ]]; then
+        log_error "Path '$target' is not being tracked (exact match required)"
+        log_info "Currently tracked paths:"
+        while IFS= read -r tracked_line; do
+            [[ -z "$tracked_line" ]] && continue
+            echo "  - $tracked_line"
+        done < "$TRACKED_ITEMS"
+        return 1
+    fi
+    
+    # Confirm the action
+    echo ""
+    log_warning "This will stop managing '$target' and restore it as a regular file/directory."
+    if ! prompt_user "Continue with unmanaging '$target'?"; then
+        log_info "Unmanage operation cancelled"
+        return 0
+    fi
+    
+    # Use existing remove logic but simpler since we know exact path
+    if [[ -z "$DOTFILESPATH" ]]; then
+        log_error "DOTFILESPATH environment variable is not set"
+        return 1
+    fi
+    
+    if [[ -z "$OS" ]]; then
+        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    fi
+    
+    local repo_files_dir="$DOTFILESPATH/$OS/files"
+    
+    # Determine repo path
+    local repo_path
+    if [[ "$target_tracked" == '$HOME'* ]]; then
+        local rel_path="${target_tracked#\$HOME/}"
+        repo_path="$repo_files_dir/HOME/$rel_path"
+    else
+        local rel_path="${target_tracked#/}"
+        repo_path="$repo_files_dir/$rel_path"
+    fi
+    
+    log_info "Unmanaging: $target"
+    
+    # First, find and restore any symlinked files within this path
+    if [[ -d "$target" ]]; then
+        log_info "Scanning for symlinked files within directory: $target"
+        find "$target" -type l | while read -r symlink; do
+            local link_target=$(readlink "$symlink")
+            
+            # Check if this symlink points to our repo
+            if [[ "$link_target" == "$repo_path"* ]]; then
+                log_info "Restoring symlinked file: $symlink"
+                
+                # Determine if we need sudo
+                local needs_sudo=false
+                if [[ "$symlink" != "$HOME"* ]] && [[ "$symlink" == "/"* ]]; then
+                    needs_sudo=true
+                fi
+                
+                # Check if repo file actually exists before trying to restore
+                if [[ -e "$link_target" ]]; then
+                    # Replace symlink with repo content
+                    if [[ "$needs_sudo" == true ]]; then
+                        sudo rm "$symlink"
+                        sudo cp -r "$link_target" "$symlink"
+                    else
+                        rm "$symlink"
+                        cp -r "$link_target" "$symlink"
+                    fi
+                    
+                    log_success "Restored: $symlink"
+                else
+                    log_warning "Cannot restore $symlink - repo file missing: $link_target"
+                    log_info "Removing broken symlink: $symlink"
+                    if [[ "$needs_sudo" == true ]]; then
+                        sudo rm "$symlink"
+                    else
+                        rm "$symlink"
+                    fi
+                fi
+            fi
+        done
+    fi
+    
+    # Then handle the main path if it's a symlink
+    if [[ -L "$target" ]]; then
+        local link_target=$(readlink "$target")
+        if [[ "$link_target" == "$repo_path" ]]; then
+            log_info "Restoring symlink to hard file/directory: $target"
+            
+            # Determine if we need sudo
+            local needs_sudo=false
+            if [[ "$target" != "$HOME"* ]] && [[ "$target" == "/"* ]]; then
+                needs_sudo=true
+            fi
+            
+            # Check if repo path exists before trying to restore
+            if [[ -e "$repo_path" ]]; then
+                # Replace symlink with repo content
+                if [[ "$needs_sudo" == true ]]; then
+                    sudo rm "$target"
+                    sudo cp -r "$repo_path" "$target"
+                else
+                    rm "$target"
+                    cp -r "$repo_path" "$target"
+                fi
+                
+                log_success "Restored: $target"
+            else
+                log_warning "Cannot restore $target - repo path missing: $repo_path"
+                log_info "Removing broken symlink: $target"
+                if [[ "$needs_sudo" == true ]]; then
+                    sudo rm "$target"
+                else
+                    rm "$target"
+                fi
+            fi
+        fi
+    fi
+    
+    # Remove from repo
+    if [[ -e "$repo_path" ]]; then
+        log_info "Removing from repository: $repo_path"
+        rm -rf "$repo_path"
+        
+        # Clean up empty parent directories
+        local parent_dir="$(dirname "$repo_path")"
+        while [[ "$parent_dir" != "$repo_files_dir" ]] && [[ "$parent_dir" != "/" ]]; do
+            if [[ -d "$parent_dir" ]] && [[ -z "$(ls -A "$parent_dir" 2>/dev/null)" ]]; then
+                rmdir "$parent_dir" 2>/dev/null
+                log_info "Removed empty directory: $parent_dir"
+                parent_dir="$(dirname "$parent_dir")"
+            else
+                break
+            fi
+        done
+    fi
+    
+    # Remove from tracking list
+    local temp_file
+    temp_file=$(mktemp)
+    
+    while IFS= read -r line; do
+        if [[ "$line" != "$target_tracked" ]]; then
+            echo "$line" >> "$temp_file"
+        fi
+    done < "$TRACKED_ITEMS"
+    
+    cat "$temp_file" > "$TRACKED_ITEMS"
+    rm "$temp_file"
+    
+    log_success "Unmanaged: $target_tracked"
+    
+    # Remove tracking file if empty
+    if [[ ! -s "$TRACKED_ITEMS" ]]; then
+        rm "$TRACKED_ITEMS"
+        log_info "No more tracked files, removed tracking list"
+    fi
+}
+
+# Remove matching patterns from ignore list when adding files
+remove_from_ignore_list() {
+    local add_path="$1"
+    
+    # Don't do anything if ignore list doesn't exist
+    if [[ ! -f "$IGNORED_ITEMS" ]]; then
+        return 0
+    fi
+    
+    # Convert add path to tracking format for comparison
+    local add_path_tracked
+    if [[ "$add_path" == "$HOME"* ]]; then
+        add_path_tracked='$HOME'"${add_path#$HOME}"
+    else
+        add_path_tracked="$add_path"
+    fi
+    
+    local temp_file
+    temp_file=$(mktemp)
+    local removed_count=0
+    
+    while IFS= read -r ignore_pattern; do
+        [[ -z "$ignore_pattern" ]] && continue
+        
+        local should_remove=false
+        
+        # Check if the add path matches or contains this ignore pattern
+        
+        # Direct match
+        if [[ "$add_path_tracked" == "$ignore_pattern" ]]; then
+            should_remove=true
+        fi
+        
+        # Check if we're adding a parent directory that contains ignored items
+        local ignore_abs="${ignore_pattern/#\$HOME/$HOME}"
+        if [[ "$ignore_abs" == "$add_path"/* ]]; then
+            should_remove=true
+        fi
+        
+        # Check glob patterns
+        case "$add_path_tracked" in
+            $ignore_pattern) should_remove=true ;;
+        esac
+        
+        case "$add_path" in
+            $ignore_pattern) should_remove=true ;;
+        esac
+        
+        if [[ "$should_remove" == true ]]; then
+            log_info "Removing conflicting ignore pattern: $ignore_pattern"
+            removed_count=$((removed_count + 1))
+        else
+            echo "$ignore_pattern" >> "$temp_file"
+        fi
+    done < "$IGNORED_ITEMS"
+    
+    if [[ $removed_count -gt 0 ]]; then
+        # Overwrite original ignore list
+        cat "$temp_file" > "$IGNORED_ITEMS"
+        log_success "Removed $removed_count conflicting patterns from ignore list"
+        
+        # Remove ignore file if empty
+        if [[ ! -s "$IGNORED_ITEMS" ]]; then
+            rm "$IGNORED_ITEMS"
+            log_info "No more ignore patterns, removed ignore list"
+        fi
+    fi
+    
+    rm "$temp_file"
+}
+
+# Cleanup ignored files that are currently managed (symlinked or in repo)
+# This implements Option A: complete un-management
+cleanup_ignored_files() {
+    if [[ ! -f "$IGNORED_ITEMS" ]] || [[ ! -f "$TRACKED_ITEMS" ]]; then
+        return 0
+    fi
+    
+    if [[ -z "$DOTFILESPATH" ]]; then
+        log_error "DOTFILESPATH environment variable is not set"
+        return 1
+    fi
+    
+    if [[ -z "$OS" ]]; then
+        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    fi
+    
+    local repo_files_dir="$DOTFILESPATH/$OS/files"
+    
+    # Track patterns and paths to remove from tracking
+    local temp_tracking_file
+    temp_tracking_file=$(mktemp)
+    
+    log_info "Cleaning up ignored files from management..."
+    
+    # First, scan all files and directories in the repository and remove ignored ones
+    if [[ -d "$repo_files_dir" ]]; then
+        # Process files and directories, but handle directories after files
+        find "$repo_files_dir" -depth \( -type f -o -type d \) | while read -r repo_item; do
+            # Skip the root files directory itself
+            [[ "$repo_item" == "$repo_files_dir" ]] && continue
+            # Convert repo path back to original path
+            local relative_path="${repo_item#$repo_files_dir/}"
+            local original_path
+            
+            if [[ "$relative_path" == HOME/* ]]; then
+                # It's a HOME file/directory
+                original_path="$HOME/${relative_path#HOME/}"
+            else
+                # It's a system file/directory
+                original_path="/$relative_path"
+            fi
+            
+            # Check if this item should be ignored
+            if should_ignore "$original_path"; then
+                if [[ -f "$repo_item" ]]; then
+                    log_info "Found ignored file in repo: $repo_item (original: $original_path)"
+                    
+                    # If the original file is symlinked to our repo, restore it
+                    if [[ -L "$original_path" ]]; then
+                        local link_target=$(readlink "$original_path")
+                        if [[ "$link_target" == "$repo_item" ]]; then
+                            log_info "Restoring symlink to hard file: $original_path"
+                            
+                            # Determine if we need sudo
+                            local needs_sudo=false
+                            if [[ "$original_path" != "$HOME"* ]] && [[ "$original_path" == "/"* ]]; then
+                                needs_sudo=true
+                            fi
+                            
+                            # Replace symlink with repo content
+                            if [[ "$needs_sudo" == true ]]; then
+                                sudo rm "$original_path"
+                                sudo cp -r "$repo_item" "$original_path"
+                            else
+                                rm "$original_path"
+                                cp -r "$repo_item" "$original_path"
+                            fi
+                            
+                            log_success "Restored: $original_path"
+                        fi
+                    fi
+                    
+                    # Remove file from repo
+                    log_info "Removing ignored file from repository: $repo_item"
+                    rm -f "$repo_item"
+                    
+                elif [[ -d "$repo_item" ]]; then
+                    log_info "Found ignored directory in repo: $repo_item (original: $original_path)"
+                    
+                    # If the original directory is symlinked to our repo, restore it
+                    if [[ -L "$original_path" ]]; then
+                        local link_target=$(readlink "$original_path")
+                        if [[ "$link_target" == "$repo_item" ]]; then
+                            log_info "Restoring symlinked directory to hard directory: $original_path"
+                            
+                            # Determine if we need sudo
+                            local needs_sudo=false
+                            if [[ "$original_path" != "$HOME"* ]] && [[ "$original_path" == "/"* ]]; then
+                                needs_sudo=true
+                            fi
+                            
+                            # Replace symlink with repo content
+                            if [[ "$needs_sudo" == true ]]; then
+                                sudo rm "$original_path"
+                                sudo cp -r "$repo_item" "$original_path"
+                            else
+                                rm "$original_path"
+                                cp -r "$repo_item" "$original_path"
+                            fi
+                            
+                            log_success "Restored directory: $original_path"
+                        fi
+                    fi
+                    
+                    # Remove directory from repo (find -depth ensures children are processed first)
+                    if [[ -z "$(ls -A "$repo_item" 2>/dev/null)" ]]; then
+                        log_info "Removing ignored empty directory from repository: $repo_item"
+                        rmdir "$repo_item" 2>/dev/null
+                    fi
+                fi
+            fi
+        done
+        
+        # Clean up empty directories after all file removals
+        log_info "Cleaning up empty directories..."
+        find "$repo_files_dir" -type d -empty | sort -r | while read -r empty_dir; do
+            if [[ "$empty_dir" != "$repo_files_dir" ]]; then
+                rmdir "$empty_dir" 2>/dev/null && log_info "Removed empty directory: $empty_dir"
+            fi
+        done
+    fi
+    
+    # Then, clean up tracking list of any patterns that would be completely ignored
+    while IFS= read -r tracked_line; do
+        [[ -z "$tracked_line" ]] && continue
+        
+        # Expand $HOME in tracked path to get actual path
+        local actual_path="${tracked_line/#\$HOME/$HOME}"
+        
+        # Check if this tracked item itself should be ignored (not just files within it)
+        if should_ignore "$actual_path"; then
+            log_info "Removing completely ignored tracked item from tracking: $tracked_line"
+        else
+            # Keep this in tracking list
+            echo "$tracked_line" >> "$temp_tracking_file"
+        fi
+        
+    done < "$TRACKED_ITEMS"
+    
+    # Update tracking list
+    cat "$temp_tracking_file" > "$TRACKED_ITEMS"
+    rm "$temp_tracking_file"
+    
+    # Remove tracking file if empty
+    if [[ ! -s "$TRACKED_ITEMS" ]]; then
+        rm "$TRACKED_ITEMS"
+        log_info "No more tracked files, removed tracking list"
+    fi
+}################## original_source/dotfiler-lib/ignore.sh END ####################
+
+################## original_source/dotfiler-lib/newsync.sh START ##################
+# Sync new files only - don't touch existing ones
+cmd_newsync() {
+    local source_path="$1"
+    
+    # Determine destination path
+    if [[ "$source_path" == "$HOME"* ]]; then
+        relative_path="${source_path#$HOME/}"
+        dest_base="$DOTFILESPATH/$OS/files/HOME/$relative_path"
+    else
+        relative_path="${source_path#/}"
+        dest_base="$DOTFILESPATH/$OS/files/$relative_path"
+    fi
+    
+    if [[ -d "$source_path" ]]; then
+        # For directories, find new files/folders
+        find "$source_path" -type f -o -type d -o -type l | while read -r item; do
+            # Check if this item should be ignored
+            if should_ignore "$item"; then
+                continue
+            fi
+            # Calculate relative path from source
+            # Ensure source_path ends with / for proper path prefix removal
+            local source_with_slash="$source_path"
+            [[ "$source_with_slash" != */ ]] && source_with_slash="$source_with_slash/"
+            
+            item_relative="${item#$source_with_slash}"
+            
+            # Enhanced validation to prevent directory loops
+            if [[ "$item_relative" == "$item" ]]; then
+                continue  # Skip if prefix removal failed (root dir or unrelated path)
+            fi
+            
+            if [[ -z "$item_relative" ]]; then
+                continue  # Skip empty relative paths
+            fi
+            
+            if [[ "$item_relative" == *"$source_path"* ]]; then
+                log_warning "Skipping potentially recursive path: $item"
+                continue  # Skip paths that could create loops
+            fi
+            
+            # Ensure proper path joining
+            if [[ "$item_relative" == /* ]]; then
+                dest_item="$dest_base$item_relative"
+            else
+                dest_item="$dest_base/$item_relative"
+            fi
+            
+            if [[ ! -e "$dest_item" ]]; then
+                if [[ -d "$item" ]]; then
+                    echo "[INFO] Creating new directory: $dest_item"
+                    mkdir -p "$dest_item"
+                elif [[ -L "$item" ]]; then
+                    # Check if symlink target exists
+                    if [[ -e "$item" ]]; then
+                        echo "[INFO] Adding new symlink (copying target): $dest_item"
+                        mkdir -p "$(dirname "$dest_item")"
+                        # Copy the content that the symlink points to, not the symlink itself
+                        cp -L "$item" "$dest_item"
+                    else
+                        log_warning "Skipping broken symlink: $item -> $(readlink "$item" 2>/dev/null || echo "unknown")"
+                        # Remove the broken symlink to clean up
+                        log_info "Removing broken symlink: $item"
+                        rm -f "$item"
+                    fi
+                else
+                    echo "[INFO] Adding new file: $dest_item"
+                    mkdir -p "$(dirname "$dest_item")"
+                    cp "$item" "$dest_item"
+                fi
+            fi
+        done
+    else
+        # For files, just check if destination exists and if it should be ignored
+        if should_ignore "$source_path"; then
+            return 0
+        fi
+        
+        if [[ ! -e "$dest_base" ]]; then
+            if [[ -L "$source_path" ]]; then
+                # Handle symlinks (same logic as directory scan)
+                if [[ -e "$source_path" ]]; then
+                    echo "[INFO] Adding new symlink (copying target): $dest_base"
+                    mkdir -p "$(dirname "$dest_base")"
+                    cp -L "$source_path" "$dest_base"
+                else
+                    log_warning "Skipping broken symlink: $source_path -> $(readlink "$source_path" 2>/dev/null || echo "unknown")"
+                    # Remove the broken symlink to clean up
+                    log_info "Removing broken symlink: $source_path"
+                    rm -f "$source_path"
+                fi
+            else
+                echo "[INFO] Adding new file: $dest_base"
+                mkdir -p "$(dirname "$dest_base")"
+                cp "$source_path" "$dest_base"
+            fi
+        fi
+    fi
+}################## original_source/dotfiler-lib/newsync.sh END ####################
+
+################## original_source/dotfiler-lib/common.sh START ##################
+# Legacy color definitions (fallback when clog not available)
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+# Check if clog is available
+CLOG_AVAILABLE=false
+if command -v clog >/dev/null 2>&1; then
+    CLOG_AVAILABLE=true
+fi
+
+# Smart logging functions that use clog when available, fallback to legacy
+log_info() {
+    if [[ "$CLOG_AVAILABLE" == true ]]; then
+        clog INFO "$1"
+    else
+        echo -e "${BLUE}[INFO]${NC} $1"
+    fi
+}
+
+log_success() {
+    if [[ "$CLOG_AVAILABLE" == true ]]; then
+        clog SUCCESS "$1"
+    else
+        echo -e "${GREEN}[SUCCESS]${NC} $1"
+    fi
+}
+
+log_warning() {
+    if [[ "$CLOG_AVAILABLE" == true ]]; then
+        clog WARNING "$1"
+    else
+        echo -e "${YELLOW}[WARNING]${NC} $1"
+    fi
+}
+
+log_error() {
+    if [[ "$CLOG_AVAILABLE" == true ]]; then
+        clog ERROR "$1"
+    else
+        echo -e "${RED}[ERROR]${NC} $1"
+    fi
+}
+
+# Global environment setup - ensure required variables are set
+if [[ -z "${OS:-}" ]]; then
+    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    export OS
+fi
+
+if [[ -z "${DOTFILESPATH:-}" ]]; then
+    log_error "DOTFILESPATH environment variable is not set"
+    log_error "Please set DOTFILESPATH to your dotfiles repository path"
+    log_error "Example: export DOTFILESPATH=\"\$HOME/.dotfiles\""
+    exit 1
+fi
+
+# Security validation functions
+validate_path() {
+    local path="$1"
+    local description="${2:-path}"
+    
+    # Check for dangerous characters
+    if [[ "$path" =~ $'\n'|$'\0'|$'\t' ]]; then
+        log_error "Invalid characters in $description: $path"
+        return 1
+    fi
+    
+    # Check for suspicious patterns
+    if [[ "$path" == *".."* ]] || [[ "$path" == *"/./"* ]]; then
+        log_warning "Potentially unsafe $description: $path"
+    fi
+    
+    return 0
+}
+
+validate_filename() {
+    local name="$1"
+    
+    if [[ "$name" =~ $'\n'|$'\0'|$'\t'|$'\r' ]]; then
+        log_error "Filename contains invalid characters: $name"
+        return 1
+    fi
+    
+    return 0
+}################## original_source/dotfiler-lib/common.sh END ####################
+
+################## original_source/dotfiler-lib/combine-script.sh START ##################
+#!/bin/bash
+set -euo pipefail
+
+output_file="OUTPUT.sh"
+input_files=("common.sh" "add.sh" "remove.sh" "build.sh" "list.sh" "newsync.sh" "sync.sh" "../dotfiler")
+# Clear output file
+> "$output_file"
+
+# Concatenate input files
+for file in "${input_files[@]}"; do
+    if [[ ! -f "$file" ]]; then
+        echo "Error: $file not found" >&2
+        exit 1
+    fi
+    cat "$file" >> "$output_file"
+    echo "# ***** $file *****" >> "$output_file"  # Add blank line between files
+done
+
+chmod +x "$output_file"
+echo "Created $output_file from ${input_files[*]}"################## original_source/dotfiler-lib/combine-script.sh END ####################
+
+################## original_source/dotfiler-lib/build.sh START ##################
+cmd_build() {
+    local repo_first=false
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --repo-first)
+                repo_first=true
+                shift
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                return 1
+                ;;
+        esac
+    done
+    
+    # Ensure config migration happens
+    migrate_config_files
+    
+    # First cleanup any ignored files that are currently managed
+    cleanup_ignored_files
+    
+    # Cleanup expired deletion tombstones and enforce deletions
+    cleanup_deleted_items
+    enforce_deletions
+    
+    # Auto-sync new files before building symlinks (unless --repo-first is specified)
+    if [[ "$repo_first" == true ]]; then
+        log_info "Repo-first mode: Skipping sync, building symlinks from repository only"
+    elif [[ -f "$TRACKED_ITEMS" ]]; then
+        log_info "Syncing new files before building symlinks..."
+        
+        # Call sync logic directly without the error check since we already know tracked files exist
+        local synced_count=0
+        
+        while IFS= read -r line; do
+            [[ -z "$line" ]] && continue
+            # expand literal $HOME into this machine's real $HOME
+            source_path="${line/#\$\HOME/$HOME}"
+
+            # Check if this path should be ignored
+            if should_ignore "$source_path"; then
+                log_info "Ignoring: $source_path"
+                continue
+            fi
+
+            # Check if source exists (or is a symlink, even if broken)
+            if [[ ! -e "$source_path" ]] && [[ ! -L "$source_path" ]]; then
+                log_warning "Source missing: $line"
+                continue
+            fi
+            
+            if [[ -d "$source_path" ]]; then
+                log_info "Checking directory for new items: $source_path"
+            else
+                log_info "Checking file: $source_path"
+            fi
+            
+            cmd_newsync "$source_path"
+            synced_count=$((synced_count + 1))
+        done < "$TRACKED_ITEMS"
+        
+        log_info "Processed $synced_count tracked items for sync"
+    else
+        log_info "No tracked files found, skipping sync"
+    fi
+    
+    log_info "Linking config files with find"
+    
+    local dotfiles_base="$DOTFILESPATH/$OS/files"
+    
+    # Find all subdirectories in the files directory
+    find "$dotfiles_base" -mindepth 1 -maxdepth 1 -type d | while read -r dir; do
+        # Get the directory name (e.g., "HOME", "Library")
+        dir_name=$(basename "$dir")
+        
+        # Determine target base directory and if we need sudo
+        local needs_sudo=false
+        if [[ "$dir_name" == "HOME" ]]; then
+            target_base="$HOME"
+        else
+            target_base="/$dir_name"
+            needs_sudo=true
+        fi
+        
+        # Find all files in this directory recursively
+        find "$dir" -type f -not -name ".DS_Store" | while read -r file; do
+            # Convert repo path back to original path for ignore checking
+            local relative_from_dir="${file#$dir/}"
+            local original_path
+            if [[ "$dir_name" == "HOME" ]]; then
+                original_path="$HOME/$relative_from_dir"
+            else
+                original_path="/$dir_name/$relative_from_dir"
+            fi
+            
+            # Check if this file should be ignored
+            if should_ignore "$original_path"; then
+                log_info "Skipping ignored file: $original_path"
+                continue
+            fi
+            # Get relative path from the current directory
+            relative_path="${file#$dir/}"
+            target="$target_base/$relative_path"
+            
+            # Create parent directory if it doesn't exist (with or without sudo)
+            target_dir="$(dirname "$target")"
+            if [[ ! -d "$target_dir" ]]; then
+                if [[ "$needs_sudo" == true ]]; then
+                    log_info "Creating directory: $target_dir with sudo"
+                    sudo mkdir -p "$target_dir"
+                else
+                    log_info "Creating directory: $target_dir"
+                    mkdir -p "$target_dir"
+                fi
+            fi
+            
+            # Check if we need to create/update the symlink
+            if [[ -L "$target" ]]; then
+                current_link=$(readlink "$target")
+                if [[ "$current_link" == "$file" ]]; then
+                    # Already linked to the correct file, skip
+                    continue
+                else
+                    log_info "Updating: $target (was linked to $current_link)"
+                    if [[ "$needs_sudo" == true ]]; then
+                        log_info "Using sudo to update symlink: $target"
+                        sudo ln -sf "$file" "$target"
+                    else
+                        ln -sf "$file" "$target"
+                    fi
+                fi
+            elif [[ -e "$target" ]]; then
+                log_warning "Overwriting: $target (was a regular file)"
+                if [[ "$needs_sudo" == true ]]; then
+                    log_info "Using sudo to overwrite file: $target"
+                    sudo ln -sf "$file" "$target"
+                else
+                    ln -sf "$file" "$target"
+                fi
+            else
+                log_info "Linking: $target"
+                if [[ "$needs_sudo" == true ]]; then
+                    log_info "Using sudo to create symlink: $target"
+                    sudo ln -sf "$file" "$target"
+                else
+                    ln -sf "$file" "$target"
+                fi
+            fi
+        done
+    done
+}################## original_source/dotfiler-lib/build.sh END ####################
+
+################## original_source/dotfiler-lib/delete.sh START ##################
+#!/usr/bin/env bash
+
+# Delete function with tombstoning
+# Permanently deletes files/directories from all systems with cross-machine enforcement
+
+# Add entry to deleted items list with timestamp  
+add_to_deleted_list() {
+    local target="$1"
+    local timestamp=$(date +%s)
+    
+    # Ensure config migration happens
+    migrate_config_files
+    
+    # Check if already in deleted list
+    if [[ -f "$DELETED_ITEMS" ]] && grep -q "^${target}|" "$DELETED_ITEMS"; then
+        log_info "Item already in deletion list: $target"
+        return 0
+    fi
+    
+    # Add to deleted list with timestamp
+    echo "${target}|${timestamp}" >> "$DELETED_ITEMS"
+    log_info "Added to deletion list: $target"
+}
+
+# Add entry to ignored items list
+add_to_ignored_list() {
+    local target="$1"
+    
+    # Check if already in ignored list
+    if [[ -f "$IGNORED_ITEMS" ]] && grep -Fxq "$target" "$IGNORED_ITEMS"; then
+        log_info "Item already in ignore list: $target"
+        return 0
+    fi
+    
+    # Add to ignored list
+    echo "$target" >> "$IGNORED_ITEMS"
+    log_info "Added to ignore list: $target"
+}
+
+# Remove from filesystem (handles both files and directories)
+remove_from_filesystem() {
+    local target="$1"
+    local needs_sudo="$2"
+    
+    if [[ ! -e "$target" ]] && [[ ! -L "$target" ]]; then
+        log_info "Item already removed from filesystem: $target"
+        return 0
+    fi
+    
+    if [[ "$needs_sudo" == true ]]; then
+        log_info "Removing with sudo: $target"
+        sudo rm -rf "$target"
+    else
+        log_info "Removing: $target"
+        rm -rf "$target"
+    fi
+    
+    if [[ -e "$target" ]] || [[ -L "$target" ]]; then
+        log_error "Failed to remove: $target"
+        return 1
+    fi
+    
+    log_success "Removed from filesystem: $target"
+}
+
+# Remove from repository
+remove_from_repository() {
+    local target="$1"
+    local target_tracked="$2"
+    
+    if [[ -z "$DOTFILESPATH" ]]; then
+        log_error "DOTFILESPATH environment variable is not set"
+        return 1
+    fi
+    
+    if [[ -z "$OS" ]]; then
+        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    fi
+    
+    local repo_files_dir="$DOTFILESPATH/$OS/files"
+    
+    # Determine repo path
+    local repo_path
+    if [[ "$target_tracked" == '$HOME'* ]]; then
+        local rel_path="${target_tracked#\$HOME/}"
+        repo_path="$repo_files_dir/HOME/$rel_path"
+    else
+        local rel_path="${target_tracked#/}"
+        repo_path="$repo_files_dir/$rel_path"
+    fi
+    
+    if [[ -e "$repo_path" ]]; then
+        log_info "Removing from repository: $repo_path"
+        rm -rf "$repo_path"
+        
+        # Clean up empty parent directories
+        local parent_dir="$(dirname "$repo_path")"
+        while [[ "$parent_dir" != "$repo_files_dir" ]] && [[ "$parent_dir" != "/" ]]; do
+            if [[ -d "$parent_dir" ]] && [[ -z "$(ls -A "$parent_dir" 2>/dev/null)" ]]; then
+                rmdir "$parent_dir" 2>/dev/null
+                log_info "Removed empty directory: $parent_dir"
+                parent_dir="$(dirname "$parent_dir")"
+            else
+                break
+            fi
+        done
+        
+        log_success "Removed from repository: $repo_path"
+    else
+        log_info "Item not in repository: $repo_path"
+    fi
+}
+
+# Main delete command
+cmd_delete() {
+    local target="$1"
+    
+    if [[ -z "$target" ]]; then
+        log_error "Usage: dotfiler delete <file_or_directory>"
+        return 1
+    fi
+    
+    # Ensure config migration happens
+    migrate_config_files
+    
+    # Convert to absolute path
+    local target_abs
+    if [[ "$target" == "~"* ]]; then
+        target_abs="${target/#\~/$HOME}"
+    elif [[ "$target" != "/"* ]]; then
+        if [[ -e "$target" ]]; then
+            target_abs=$(realpath "$target")
+        elif [[ -e "$HOME/$target" ]]; then
+            target_abs=$(realpath "$HOME/$target")
+        else
+            target_abs="$target"
+        fi
+    else
+        target_abs="$target"
+    fi
+    
+    # Validate the path for security
+    if ! validate_path "$target_abs" "target path"; then
+        return 1
+    fi
+    
+    # Convert to tracking format
+    local target_tracked
+    if [[ "$target_abs" == "$HOME"* ]]; then
+        target_tracked='$HOME'"${target_abs#$HOME}"
+    else
+        target_tracked="$target_abs"
+    fi
+    
+    log_warning "This will permanently delete '$target_abs' from all systems with tombstone protection."
+    echo ""
+    
+    # Show what will be deleted
+    if [[ -e "$target_abs" ]] || [[ -L "$target_abs" ]]; then
+        if [[ -d "$target_abs" ]]; then
+            echo "Directory contents:"
+            ls -la "$target_abs" 2>/dev/null | head -10
+            if [[ $(ls -1 "$target_abs" | wc -l) -gt 10 ]]; then
+                echo "... and $(( $(ls -1 "$target_abs" | wc -l) - 10 )) more items"
+            fi
+        else
+            echo "File: $(ls -la "$target_abs" 2>/dev/null)"
+        fi
+        echo ""
+    fi
+    
+    # Confirmation prompt
+    if ! prompt_user "Continue with permanent deletion?"; then
+        log_info "Delete operation cancelled"
+        return 0
+    fi
+    
+    # Step 1: Add to deleted list (tombstone)
+    log_info "Step 1: Creating tombstone..."
+    add_to_deleted_list "$target_tracked"
+    
+    # Step 2: Add to ignored list
+    log_info "Step 2: Adding to ignore list..."
+    add_to_ignored_list "$target_tracked"
+    
+    # Step 3: Remove from repository
+    log_info "Step 3: Removing from repository..."
+    remove_from_repository "$target_abs" "$target_tracked"
+    
+    # Step 4: Remove from tracking list if it's directly tracked
+    if [[ -f "$TRACKED_ITEMS" ]] && grep -Fxq "$target_tracked" "$TRACKED_ITEMS"; then
+        log_info "Step 4: Removing from tracking list..."
+        local temp_file
+        temp_file=$(mktemp)
+        
+        while IFS= read -r line; do
+            if [[ "$line" != "$target_tracked" ]]; then
+                echo "$line" >> "$temp_file"
+            fi
+        done < "$TRACKED_ITEMS"
+        
+        cat "$temp_file" > "$TRACKED_ITEMS"
+        rm "$temp_file"
+        
+        log_info "Removed from tracking: $target_tracked"
+    fi
+    
+    # Step 5: Remove from filesystem
+    log_info "Step 5: Removing from filesystem..."
+    local needs_sudo=false
+    if [[ "$target_abs" != "$HOME"* ]] && [[ "$target_abs" == "/"* ]]; then
+        needs_sudo=true
+    fi
+    
+    remove_from_filesystem "$target_abs" "$needs_sudo"
+    
+    log_success "Successfully deleted: $target_abs"
+    log_info "This deletion will be enforced on other systems during their next build."
+    log_info "Tombstone will be automatically cleaned up after 120 days if file doesn't reappear."
+}
+
+# Cleanup expired deletion tombstones (called during build)
+cleanup_deleted_items() {
+    if [[ ! -f "$DELETED_ITEMS" ]]; then
+        return 0
+    fi
+    
+    log_info "Cleaning up deletion tombstones..."
+    
+    local temp_file
+    temp_file=$(mktemp)
+    local current_time=$(date +%s)
+    local retention_days=120
+    local retention_seconds=$((retention_days * 24 * 60 * 60))
+    local removed_count=0
+    local updated_count=0
+    
+    while IFS='|' read -r item_path timestamp; do
+        [[ -z "$item_path" ]] && continue
+        
+        # Add timestamp if missing (manual entries)
+        if [[ -z "$timestamp" ]]; then
+            echo "${item_path}|${current_time}" >> "$temp_file"
+            log_info "Added timestamp to deletion entry: $item_path"
+            updated_count=$((updated_count + 1))
+            continue
+        fi
+        
+        # Check if tombstone has expired
+        local age_seconds=$((current_time - timestamp))
+        if [[ $age_seconds -gt $retention_seconds ]]; then
+            # Check if item exists on current filesystem
+            local item_abs="${item_path/#\$HOME/$HOME}"
+            if [[ -e "$item_abs" ]] || [[ -L "$item_abs" ]]; then
+                # Item exists, keep tombstone and ignore entry (automated file)
+                echo "${item_path}|${timestamp}" >> "$temp_file"
+                log_info "Keeping tombstone for existing automated file: $item_path"
+            else
+                # Item doesn't exist, safe to remove tombstone and ignore entry
+                log_info "Removing expired tombstone: $item_path (${retention_days} days old)"
+                removed_count=$((removed_count + 1))
+                
+                # Remove from ignore list
+                if [[ -f "$IGNORED_ITEMS" ]]; then
+                    local temp_ignore
+                    temp_ignore=$(mktemp)
+                    while IFS= read -r ignore_line; do
+                        if [[ "$ignore_line" != "$item_path" ]]; then
+                            echo "$ignore_line" >> "$temp_ignore"
+                        fi
+                    done < "$IGNORED_ITEMS"
+                    cat "$temp_ignore" > "$IGNORED_ITEMS"
+                    rm "$temp_ignore"
+                fi
+            fi
+        else
+            # Keep unexpired tombstone
+            echo "${item_path}|${timestamp}" >> "$temp_file"
+        fi
+        
+    done < "$DELETED_ITEMS"
+    
+    # Update deleted items file
+    cat "$temp_file" > "$DELETED_ITEMS"
+    rm "$temp_file"
+    
+    # Remove file if empty
+    if [[ ! -s "$DELETED_ITEMS" ]]; then
+        rm "$DELETED_ITEMS"
+        log_info "No more deletion tombstones, removed deleted.conf"
+    fi
+    
+    if [[ $removed_count -gt 0 ]] || [[ $updated_count -gt 0 ]]; then
+        log_success "Tombstone cleanup: $removed_count removed, $updated_count updated"
+    fi
+}
+
+# Enforce deletions on other systems (called during build)
+enforce_deletions() {
+    if [[ ! -f "$DELETED_ITEMS" ]]; then
+        return 0
+    fi
+    
+    log_info "Enforcing cross-system deletions..."
+    
+    local current_time=$(date +%s)
+    local enforcement_days=90
+    local enforcement_seconds=$((enforcement_days * 24 * 60 * 60))
+    local enforced_count=0
+    
+    while IFS='|' read -r item_path timestamp; do
+        [[ -z "$item_path" ]] && continue
+        [[ -z "$timestamp" ]] && continue
+        
+        # Only enforce deletions within enforcement window
+        local age_seconds=$((current_time - timestamp))
+        if [[ $age_seconds -le $enforcement_seconds ]]; then
+            local item_abs="${item_path/#\$HOME/$HOME}"
+            
+            if [[ -e "$item_abs" ]] || [[ -L "$item_abs" ]]; then
+                log_warning "Enforcing deletion on this system: $item_abs"
+                
+                # Determine if sudo needed
+                local needs_sudo=false
+                if [[ "$item_abs" != "$HOME"* ]] && [[ "$item_abs" == "/"* ]]; then
+                    needs_sudo=true
+                fi
+                
+                remove_from_filesystem "$item_abs" "$needs_sudo"
+                enforced_count=$((enforced_count + 1))
+            fi
+        fi
+        
+    done < "$DELETED_ITEMS"
+    
+    if [[ $enforced_count -gt 0 ]]; then
+        log_success "Enforced $enforced_count deletions on this system"
+    fi
+}
+
+# Prompt user for confirmation (reuse from ignore.sh)
+prompt_user() {
+    local message="$1"
+    echo -n "$message (y/N): "
+    read -r response
+    case "$response" in
+        [yY]|[yY][eE][sS]) return 0 ;;
+        *) return 1 ;;
+    esac
+}################## original_source/dotfiler-lib/delete.sh END ####################
+
+################## original_source/dotfiler-lib/sync.sh START ##################
+cmd_sync() {
+    # Ensure config migration happens
+    migrate_config_files
+    
+    if [[ ! -f "$TRACKED_ITEMS" ]]; then
+        echo "[ERROR] No tracked files found. Use 'dadd' to start tracking files."
+        return 1
+    fi
+    
+    # First cleanup any ignored files that are currently managed
+    cleanup_ignored_files
+    
+    echo "[INFO] Syncing tracked dotfiles (new items only)..."
+    local synced_count=0
+    
+        while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        # expand literal $HOME into this machine's real $HOME
+        source_path="${line/#\$\HOME/$HOME}"
+
+        # Check if this path should be ignored
+        if should_ignore "$source_path"; then
+            echo "[INFO] Ignoring: $source_path"
+            continue
+        fi
+
+        # Check if source exists (or is a symlink, even if broken)
+        if [[ ! -e "$source_path" ]] && [[ ! -L "$source_path" ]]; then
+            echo "[WARNING] Source missing: $line"
+            continue
+        fi
+        
+        if [[ -d "$source_path" ]]; then
+            echo "[INFO] Checking directory for new items: $source_path"
+        else
+            echo "[INFO] Checking file: $source_path"
+        fi
+        
+        cmd_newsync "$source_path"
+        synced_count=$((synced_count + 1))
+    done < "$TRACKED_ITEMS"
+    
+    echo "[INFO] Processed $synced_count tracked items"
+}################## original_source/dotfiler-lib/sync.sh END ####################
+
+################## original_source/dotfiler-lib/add.sh START ##################
+# Recursively copy directory while respecting ignore patterns
+copy_with_ignore() {
+    local source_dir="$1"
+    local dest_dir="$2"
+    
+    # Create the destination directory
+    mkdir -p "$dest_dir"
+    
+    # Find all files and directories in source
+    find "$source_dir" -type f -o -type d | while read -r item; do
+        # Skip the root directory itself
+        [[ "$item" == "$source_dir" ]] && continue
+        
+        # Check if this item should be ignored
+        if should_ignore "$item"; then
+            log_info "Skipping ignored: $item"
+            continue
+        fi
+        
+        # Calculate relative path from source
+        local source_with_slash="$source_dir"
+        [[ "$source_with_slash" != */ ]] && source_with_slash="$source_with_slash/"
+        
+        local item_relative="${item#$source_with_slash}"
+        local dest_item="$dest_dir/$item_relative"
+        
+        if [[ -d "$item" ]]; then
+            # Create directory
+            mkdir -p "$dest_item"
+        else
+            # Create parent directory and copy file
+            mkdir -p "$(dirname "$dest_item")"
+            cp "$item" "$dest_item"
+        fi
+    done
+}
+
+cmd_add() {
+    local track=true
+    local input=""
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --no-track)
+                track=false
+                shift
+                ;;
+            *)
+                input="$1"
+                shift
+                ;;
+        esac
+    done
+    
+    if [[ -z "$input" ]]; then
+        echo "Usage: dotfiler add [--no-track] <file_or_directory>"
+        return 1
+    fi
+    
+    local source_path=""
+    
+    # Try to resolve the path in order of preference
+    if [[ -e "$input" ]]; then
+        # File/directory exists relative to current directory
+        source_path=$(realpath "$input")
+    elif [[ -e "$HOME/$input" ]]; then
+        # Check if it exists in HOME
+        source_path=$(realpath "$HOME/$input")
+    elif command -v "$input" >/dev/null 2>&1; then
+        # It's a command, find its path
+        source_path=$(which "$input")
+    else
+        echo "[ERROR] Cannot find $input"
+        return 1
+    fi
+    
+    echo "[INFO] Found: $source_path"
+    
+    # Validate the path for security
+    if ! validate_path "$source_path" "source path"; then
+        return 1
+    fi
+    
+    # Check for conflicts with ignore patterns
+    if find_conflicting_ignore_patterns "$source_path"; then
+        echo ""
+        if ! prompt_user "Remove conflicting ignore patterns and continue?"; then
+            log_info "Add operation cancelled"
+            return 0
+        fi
+    fi
+    
+    # Remove any matching ignore patterns to prevent conflicts
+    remove_from_ignore_list "$source_path"
+    
+    # Check if source is already a symlink and handle appropriately
+    if [[ -L "$source_path" ]]; then
+        local link_target=$(readlink "$source_path")
+        
+        # Convert source path to tracking format to determine expected repo path
+        local expected_tracked_path
+        if [[ "$source_path" == "$HOME"* ]]; then
+            expected_tracked_path='$HOME'"${source_path#$HOME}"
+        else
+            expected_tracked_path="$source_path"
+        fi
+        
+        # Determine what our repo path would be
+        local expected_repo_path
+        if [[ "$expected_tracked_path" == '$HOME'* ]]; then
+            local rel_path="${expected_tracked_path#\$HOME/}"
+            expected_repo_path="$DOTFILESPATH/$OS/files/HOME/$rel_path"
+        else
+            local rel_path="${expected_tracked_path#/}"
+            expected_repo_path="$DOTFILESPATH/$OS/files/$rel_path"
+        fi
+        
+        # Check if it's already symlinked to our repo
+        if [[ "$link_target" == "$expected_repo_path" ]]; then
+            # Already managed by us - just add to tracking if not already there
+            log_info "File already managed by dotfiler, adding to tracking: $source_path"
+        else
+            # Symlinked to something else - error out
+            log_error "Cannot add symlink that points to external location: $source_path -> $link_target"
+            log_error "Please resolve the symlink first or use a different file"
+            return 1
+        fi
+    fi
+    
+    # Determine destination based on whether it's in HOME or not
+    if [[ "$source_path" == "$HOME"* ]]; then
+        # It's in HOME, so copy to HOME directory with relative path
+        if [[ "$source_path" == "$HOME" ]]; then
+            echo "[ERROR] Cannot add the entire HOME directory"
+            return 1
+        fi
+        relative_path="${source_path#$HOME/}"
+        dest_path="$DOTFILESPATH/$OS/files/HOME/$relative_path"
+    else
+        # It's outside HOME, copy with full path structure (minus leading slash)
+        relative_path="${source_path#/}"
+        dest_path="$DOTFILESPATH/$OS/files/$relative_path"
+    fi
+    
+    # Create destination directory
+    dest_dir="$(dirname "$dest_path")"
+    mkdir -p "$dest_dir"
+    
+    # Copy the file or directory (respecting ignore patterns)
+    # Skip copying if it's already our symlink
+    if [[ -L "$source_path" ]]; then
+        local link_target=$(readlink "$source_path")
+        if [[ "$link_target" == "$dest_path" ]]; then
+            log_info "File already in repository, skipping copy: $source_path"
+        else
+            log_error "Unexpected symlink state during copy phase"
+            return 1
+        fi
+    elif [[ -d "$source_path" ]]; then
+        # For directories, do selective copying
+        copy_with_ignore "$source_path" "$dest_path"
+    else
+        # For files, check if it should be ignored
+        if should_ignore "$source_path"; then
+            log_warning "Skipping ignored file: $source_path"
+            return 0
+        fi
+        cp "$source_path" "$dest_path"
+    fi
+    
+    if [[ -d "$source_path" ]]; then
+        echo "[INFO] Copied directory: $source_path -> $dest_path"
+    else
+        echo "[INFO] Copied file: $source_path -> $dest_path"
+    fi
+    
+    # Add to tracking unless --no-track was specified
+    if [[ "$track" == true ]]; then
+        mkdir -p "$(dirname "$TRACKED_ITEMS")"
+        
+        # Write path with $HOME variable if applicable
+        local tracked_path="$source_path"
+        if [[ "$source_path" == "$HOME"* ]]; then
+            tracked_path='$HOME'"${source_path#$HOME}"
+        fi
+        
+        # Append the new path to the list
+        echo "$tracked_path" >> "$TRACKED_ITEMS"
+        
+        # Now, sort the file while preserving the symlink
+        local temp_file
+        temp_file=$(mktemp)
+        # Sort the list and write to a temporary file
+        sort -u "$TRACKED_ITEMS" > "$temp_file"
+        # Overwrite the original file by redirecting content, which follows the symlink
+        cat "$temp_file" > "$TRACKED_ITEMS"
+        # Remove the temporary file
+        rm "$temp_file"
+        
+        echo "[INFO] Added to tracking: $tracked_path"
+    fi
+}################## original_source/dotfiler-lib/add.sh END ####################
+
+################## original_source/dotfiler-lib/list.sh START ##################
+# Show what's being tracked
+cmd_list() {
+    # Ensure config migration happens
+    migrate_config_files
+    
+    echo "[INFO] Listing tracked dotfiles..."
+
+    if [[ ! -f "$TRACKED_ITEMS" ]]; then
+        echo "[ERROR] No tracked files found"
+        return 1
+    fi
+    
+    echo "[INFO] Tracked dotfiles:"
+    while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    # expand literal $HOME into this machine’s real $HOME
+    source_path="${line/#\$\HOME/$HOME}"
+
+    # Check if source exists (or is a symlink, even if broken)
+    if [[ ! -e "$source_path" ]] && [[ ! -L "$source_path" ]]; then
+        echo "[WARNING] Source missing: $line"
+        continue
+    fi
+    
+    # Handle broken symlinks
+    if [[ -L "$source_path" ]] && [[ ! -e "$source_path" ]]; then
+        echo "[WARNING] Broken symlink: $line -> $(readlink "$source_path" 2>/dev/null || echo "unknown")"
+        continue
+    fi
+    
+    echo "  - $line"
+    done < "$TRACKED_ITEMS"
+}################## original_source/dotfiler-lib/list.sh END ####################
+
+################## original_source/dotfiler-lib/remove.sh START ##################
+cmd_remove() {
+    local input="$1"
+    
+    if [[ -z "$input" ]]; then
+        log_error "Usage: dotfiler remove <file_or_directory>"
+        return 1
+    fi
+    
+    # Ensure required environment variables are set
+    if [[ -z "$DOTFILESPATH" ]]; then
+        log_error "DOTFILESPATH environment variable is not set"
+        return 1
+    fi
+    
+    if [[ -z "$OS" ]]; then
+        OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+    fi
+    
+    # Resolve the path
+    local target_path=""
+    local tracked_path=""
+    
+    # Handle absolute paths first
+    if [[ "$input" == /* ]]; then
+        if [[ -L "$input" ]] || [[ -e "$input" ]]; then
+            target_path="$input"
+        else
+            log_error "Cannot find $input"
+            return 1
+        fi
+    # Then check current directory
+    elif [[ -L "$input" ]] || [[ -e "$input" ]]; then
+        target_path="$(pwd)/$input"
+    # Then check in HOME
+    elif [[ -L "$HOME/$input" ]] || [[ -e "$HOME/$input" ]]; then
+        target_path="$HOME/$input"
+    else
+        log_error "Cannot find $input"
+        return 1
+    fi
+    
+    # Normalize the path (remove ./ and ../ etc) for non-symlinks
+    if [[ -e "$target_path" ]] && [[ ! -L "$target_path" ]]; then
+        target_path=$(realpath "$target_path")
+    fi
+    
+    # Check if this file is tracked
+    if [[ ! -f "$TRACKED_ITEMS" ]]; then
+        log_error "No tracked files found"
+        return 1
+    fi
+    
+    # Find the tracked entry
+    while IFS= read -r line; do
+        # Skip empty lines
+        [[ -z "${line// }" ]] && continue
+        # Expand $HOME in the tracked path for comparison
+        expanded_line="${line//\$HOME/$HOME}"
+        if [[ "$expanded_line" == "$target_path" ]]; then
+            tracked_path="$line"
+            break
+        fi
+    done < "$TRACKED_ITEMS"
+    
+    if [[ -z "$tracked_path" ]]; then
+        log_error "$input is not being tracked"
+        return 1
+    fi
+    
+    log_info "Found tracked item: $tracked_path"
+    
+    # Determine the dotfiles repository path
+    local dotfiles_path=""
+    if [[ "$target_path" == "$HOME"* ]]; then
+        relative_path="${target_path#$HOME/}"
+        dotfiles_path="$DOTFILESPATH/$OS/files/HOME/$relative_path"
+    else
+        relative_path="${target_path#/}"
+        dotfiles_path="$DOTFILESPATH/$OS/files/$relative_path"
+    fi
+    
+    # Check if the dotfiles copy exists
+    if [[ ! -e "$dotfiles_path" ]]; then
+        log_error "Dotfiles copy not found at: $dotfiles_path"
+        return 1
+    fi
+    
+    # Determine if we need sudo
+    local needs_sudo=false
+    if [[ "$target_path" != "$HOME"* ]] && [[ "$target_path" == "/"* ]]; then
+        needs_sudo=true
+    fi
+    
+    # Handle the removal
+    if [[ -L "$target_path" ]]; then
+        # It's a symlink - check if it points to our dotfiles
+        local link_target=$(readlink "$target_path")
+        if [[ "$link_target" == "$dotfiles_path" ]]; then
+            log_info "Restoring original file from dotfiles repository"
+            
+            # Remove the symlink
+            if [[ "$needs_sudo" == true ]]; then
+                sudo rm "$target_path"
+            else
+                rm "$target_path"
+            fi
+            
+            # Copy the file back from dotfiles repo
+            if [[ "$needs_sudo" == true ]]; then
+                sudo cp -r "$dotfiles_path" "$target_path"
+                log_success "Restored file to original location (with sudo): $target_path"
+            else
+                cp -r "$dotfiles_path" "$target_path"
+                log_success "Restored file to original location: $target_path"
+            fi
+        else
+            log_warning "Symlink doesn't point to dotfiles repository. Removing from tracking only."
+        fi
+    elif [[ -e "$target_path" ]]; then
+        log_warning "Target exists but is not a symlink. Removing from tracking only."
+    else
+        log_warning "Target doesn't exist. Removing from tracking only."
+    fi
+    
+    # Remove from dotfiles repository
+    if [[ -e "$dotfiles_path" ]]; then
+        log_info "Removing from dotfiles repository: $dotfiles_path"
+        rm -rf "$dotfiles_path"
+        
+        # Clean up empty parent directories
+        local parent_dir="$(dirname "$dotfiles_path")"
+        while [[ "$parent_dir" != "$DOTFILESPATH/$OS/files" ]] && [[ "$parent_dir" != "/" ]]; do
+            if [[ -d "$parent_dir" ]] && [[ -z "$(ls -A "$parent_dir")" ]]; then
+                rmdir "$parent_dir"
+                log_info "Removed empty directory: $parent_dir"
+                parent_dir="$(dirname "$parent_dir")"
+            else
+                break
+            fi
+        done
+    fi
+    
+    # Remove from tracking - using a temporary file
+    log_info "Removing from tracking list"
+    local temp_file
+    temp_file=$(mktemp)
+
+    # Copy all lines except the one we want to remove into the temp file
+    while IFS= read -r line; do
+        if [[ "$line" != "$tracked_path" ]]; then
+            echo "$line" >> "$temp_file"
+        fi
+    done < "$TRACKED_ITEMS"
+
+    # Overwrite the original list with the temp file's content using redirection.
+    # This follows the symlink and preserves it.
+    cat "$temp_file" > "$TRACKED_ITEMS"
+
+    # Clean up the temporary file
+    rm "$temp_file"
+
+    log_success "Removed from tracking: $tracked_path"
+    
+    # If tracking file is now empty, remove it
+    if [[ ! -s "$TRACKED_ITEMS" ]]; then
+        rm "$TRACKED_ITEMS"
+        log_info "No more tracked files, removed tracking list"
+    fi
+}################## original_source/dotfiler-lib/remove.sh END ####################
+
+################## original_source/extras/debug_build.sh START ##################
+#!/usr/bin/env bash
+
+# Debug script to understand why build isn't creating symlinks
+
+set -euo pipefail
+
+# Source the functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$SCRIPT_DIR/dotfiler-lib"
+
+source "$LIB_DIR/common.sh"
+source "$LIB_DIR/ignore.sh"
+
+echo "=== BUILD DEBUG ==="
+echo ""
+
+echo "1. Environment:"
+echo "   DOTFILESPATH: ${DOTFILESPATH:-NOT SET}"
+echo "   OS: ${OS:-$(uname -s | tr '[:upper:]' '[:lower:]')}"
+echo ""
+
+if [[ -z "${OS:-}" ]]; then
+    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+fi
+
+dotfiles_base="$DOTFILESPATH/$OS/files"
+echo "2. Repository structure:"
+echo "   Base: $dotfiles_base"
+if [[ -d "$dotfiles_base" ]]; then
+    echo "   Contents:"
+    find "$dotfiles_base" -type f | head -10 | while read -r file; do
+        echo "     FILE: $file"
+    done
+else
+    echo "   ERROR: Repository base doesn't exist!"
+    exit 1
+fi
+echo ""
+
+echo "3. Checking for foo.csv specifically:"
+find "$dotfiles_base" -name "*foo.csv*" -type f | while read -r file; do
+    echo "   FOUND: $file"
+    
+    # Test the path conversion logic
+    dir=$(dirname "$file")
+    dir_name=$(basename "$(dirname "$file")")
+    relative_from_dir="${file#$dir/}"
+    
+    echo "     dir: $dir"
+    echo "     dir_name: $dir_name" 
+    echo "     relative_from_dir: $relative_from_dir"
+    
+    original_path=""
+    if [[ "$dir_name" == "HOME" ]]; then
+        original_path="$HOME/$relative_from_dir"
+    else
+        original_path="/$dir_name/$relative_from_dir"
+    fi
+    
+    echo "     original_path: $original_path"
+    echo "     file exists at original: $(if [[ -e "$original_path" ]]; then echo "YES"; else echo "NO"; fi)"
+    echo "     is symlink: $(if [[ -L "$original_path" ]]; then echo "YES ($(readlink "$original_path"))"; else echo "NO"; fi)"
+    
+    # Check if ignored
+    if should_ignore "$original_path"; then
+        echo "     IGNORED: YES"
+    else
+        echo "     IGNORED: NO"
+    fi
+    
+done
+
+echo ""
+echo "4. Current state of $HOME/test/foo.csv:"
+if [[ -e "$HOME/test/foo.csv" ]]; then
+    if [[ -L "$HOME/test/foo.csv" ]]; then
+        echo "   STATUS: Symlink pointing to $(readlink "$HOME/test/foo.csv")"
+    else
+        echo "   STATUS: Regular file"
+    fi
+else
+    echo "   STATUS: Does not exist"
+fi
+
+echo ""
+echo "=== END DEBUG ==="################## original_source/extras/debug_build.sh END ####################
+
