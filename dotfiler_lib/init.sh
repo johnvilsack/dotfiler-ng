@@ -38,17 +38,11 @@ cmd_init() {
     
     # Check if config files exist in config directory
     if [[ -f "$CONFIG_FILE" && -f "$TRACKED_ITEMS" && -f "$IGNORED_ITEMS" && -f "$DELETED_ITEMS" ]]; then
-        log_info "Existing configuration found in: $CONFIG_DIR"
+        log_info "Configuration loaded from: $CONFIG_DIR"
         # Load config before showing it
         source "$CONFIG_FILE"
         REPO_PATH="${REPO_PATH:-$DEFAULT_REPO_PATH}"
         REPO_FILES="$REPO_PATH/$OS/files"
-        show_config
-        echo ""
-        
-        if confirm "Reconfigure dotfiler?"; then
-            reconfigure_existing
-        fi
         return 0
     fi
     

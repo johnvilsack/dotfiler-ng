@@ -148,7 +148,7 @@ cleanup_tombstones() {
     local enforced_count=0
     local cleaned_count=0
     
-    while IFS='|' read -r path timestamp || [[ -n "$path" ]]; do
+    while IFS='|' read -r path timestamp; do
         [[ -z "$path" || "$path" == \#* ]] && continue
         
         # Handle entries without timestamp (legacy)
@@ -257,7 +257,7 @@ show_tombstones() {
     local active_seconds=$((active_days * 24 * 3600))
     local passive_seconds=$((passive_days * 24 * 3600))
     
-    while IFS='|' read -r path timestamp || [[ -n "$path" ]]; do
+    while IFS='|' read -r path timestamp; do
         [[ -z "$path" || "$path" == \#* ]] && continue
         
         # Handle entries without timestamp

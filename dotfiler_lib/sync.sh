@@ -85,7 +85,7 @@ auto_detect_deletions() {
     local filter_file="$(generate_rsync_filters)"
     
     # For each tracked item, check for deletions
-    while IFS= read -r item || [[ -n "$item" ]]; do
+    while IFS= read -r item; do
         [[ -z "$item" || "$item" == \#* ]] && continue
         
         local filesystem_path="$(get_filesystem_path "$item")"
@@ -119,7 +119,7 @@ auto_detect_deletions() {
     if [[ $deletion_count -gt 0 ]]; then
         log_info "Processing $deletion_count auto-detected deletions"
         
-        while IFS= read -r deleted_item || [[ -n "$deleted_item" ]]; do
+        while IFS= read -r deleted_item; do
             # Add to tombstone with timestamp
             add_tombstone "$deleted_item"
             
@@ -147,7 +147,7 @@ generate_rsync_filters() {
     
     # Add patterns from ignored.conf
     if [[ -f "$IGNORED_ITEMS" ]]; then
-        while IFS= read -r pattern || [[ -n "$pattern" ]]; do
+        while IFS= read -r pattern; do
             [[ -z "$pattern" || "$pattern" == \#* ]] && continue
             # Convert to rsync exclude format
             echo "- $pattern" >> "$filter_file"
@@ -156,14 +156,14 @@ generate_rsync_filters() {
     
     # Add .gitignore patterns from tracked directories
     if [[ -f "$TRACKED_ITEMS" ]]; then
-        while IFS= read -r item || [[ -n "$item" ]]; do
+        while IFS= read -r item; do
             [[ -z "$item" || "$item" == \#* ]] && continue
             
             local filesystem_path="$(get_filesystem_path "$item")"
             
             # Check for .gitignore in tracked directory
             if [[ -d "$filesystem_path" ]] && [[ -f "$filesystem_path/.gitignore" ]]; then
-                while IFS= read -r gitpattern || [[ -n "$gitpattern" ]]; do
+                while IFS= read -r gitpattern; do
                     [[ -z "$gitpattern" || "$gitpattern" == \#* ]] && continue
                     echo "- $gitpattern" >> "$filter_file"
                 done < "$filesystem_path/.gitignore"
@@ -173,7 +173,7 @@ generate_rsync_filters() {
             local check_dir="$(dirname "$filesystem_path")"
             while [[ "$check_dir" != "/" && "$check_dir" != "$HOME" ]]; do
                 if [[ -f "$check_dir/.gitignore" ]]; then
-                    while IFS= read -r gitpattern || [[ -n "$gitpattern" ]]; do
+                    while IFS= read -r gitpattern; do
                         [[ -z "$gitpattern" || "$gitpattern" == \#* ]] && continue
                         echo "- $gitpattern" >> "$filter_file"
                     done < "$check_dir/.gitignore"
@@ -199,7 +199,7 @@ sync_filesystem_to_repo_rsync() {
     local synced_count=0
     
     # Sync each tracked item using rsync
-    while IFS= read -r item || [[ -n "$item" ]]; do
+    while IFS= read -r item; do
         [[ -z "$item" || "$item" == \#* ]] && continue
         
         local filesystem_path="$(get_filesystem_path "$item")"
@@ -272,7 +272,7 @@ sync_repo_to_filesystem_rsync() {
     local synced_count=0
     
     if [[ -f "$TRACKED_ITEMS" ]]; then
-        while IFS= read -r item || [[ -n "$item" ]]; do
+        while IFS= read -r item; do
             [[ -z "$item" || "$item" == \#* ]] && continue
             
             local filesystem_path="$(get_filesystem_path "$item")"
@@ -322,7 +322,7 @@ has_symlinks() {
         return 1
     fi
     
-    while IFS= read -r item || [[ -n "$item" ]]; do
+    while IFS= read -r item; do
         [[ -z "$item" || "$item" == \#* ]] && continue
         
         local filesystem_path="$(get_filesystem_path "$item")"
@@ -343,7 +343,7 @@ migrate_symlinks_to_files() {
     
     local migrated_count=0
     
-    while IFS= read -r item || [[ -n "$item" ]]; do
+    while IFS= read -r item; do
         [[ -z "$item" || "$item" == \#* ]] && continue
         
         local filesystem_path="$(get_filesystem_path "$item")"
@@ -393,7 +393,7 @@ enforce_cross_machine_deletions() {
     local active_seconds=$((active_days * 24 * 3600))
     local enforced_count=0
     
-    while IFS='|' read -r path timestamp || [[ -n "$path" ]]; do
+    while IFS='|' read -r path timestamp; do
         [[ -z "$path" || "$path" == \#* ]] && continue
         
         # Handle entries without timestamp
@@ -436,7 +436,7 @@ auto_add_new_files_rsync() {
         awk '{print $NF}' > "$temp_new_files" || true
     
     # Process discovered files
-    while IFS= read -r repo_relative_path || [[ -n "$repo_relative_path" ]]; do
+    while IFS= read -r repo_relative_path; do
         [[ -z "$repo_relative_path" ]] && continue
         
         local filesystem_path="$(get_filesystem_path "$repo_relative_path")"
