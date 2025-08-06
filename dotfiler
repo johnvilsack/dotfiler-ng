@@ -2,7 +2,16 @@
 # dotfiler - Main executable
 
 set -euo pipefail
-TRACKEDFOLDERLIST="$HOME/.config/dotfiler/tracked-folders.txt"
+
+# Configuration files
+CONFIG_DIR="$HOME/.config/dotfiler"
+TRACKED_ITEMS="$CONFIG_DIR/tracked.conf"
+IGNORED_ITEMS="$CONFIG_DIR/ignored.conf" 
+DELETED_ITEMS="$CONFIG_DIR/deleted.conf"
+
+# Legacy support (will migrate automatically)
+TRACKEDFOLDERLIST="$CONFIG_DIR/tracked-folders.txt"
+IGNORELIST="$CONFIG_DIR/ignore-list.txt"
 
 # Determine script directory and lib path
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,6 +26,7 @@ source "$LIB_DIR/list.sh"
 source "$LIB_DIR/newsync.sh"
 source "$LIB_DIR/sync.sh"
 source "$LIB_DIR/ignore.sh"
+source "$LIB_DIR/delete.sh"
 
 # Version and metadata
 VERSION="1.0.9"
@@ -34,6 +44,7 @@ COMMANDS:
     add, a <file>     Add a file or directory to dotfiles
     remove, r <file>  Remove a file or directory from dotfiles
     ignore, i <file>  Add a file or directory to ignore list
+    delete, d <file>  Permanently delete file/directory from all systems (with tombstone)
     unmanage, u <file> Stop managing a tracked file (exact match only)
     cleanup, c        Remove all ignored files from repository
     build, b [--repo-first]  Build dotfiles by linking all tracked files
@@ -48,6 +59,7 @@ EXAMPLES:
     $PROGRAM_NAME add ~/.config/nvim
     $PROGRAM_NAME ignore .DS_Store
     $PROGRAM_NAME ignore ~/.config/sensitive
+    $PROGRAM_NAME delete ~/.config/unwanted-app
     $PROGRAM_NAME unmanage ~/.config/nvim
     $PROGRAM_NAME cleanup
     $PROGRAM_NAME list
@@ -95,6 +107,10 @@ main() {
         "ignore"|"i")
             shift
             cmd_ignore "$@"
+            ;;
+        "delete"|"d")
+            shift
+            cmd_delete "$@"
             ;;
         "cleanup"|"c")
             cmd_cleanup "$@"

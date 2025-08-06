@@ -1,5 +1,8 @@
 cmd_sync() {
-    if [[ ! -f "$TRACKEDFOLDERLIST" ]]; then
+    # Ensure config migration happens
+    migrate_config_files
+    
+    if [[ ! -f "$TRACKED_ITEMS" ]]; then
         echo "[ERROR] No tracked files found. Use 'dadd' to start tracking files."
         return 1
     fi
@@ -35,7 +38,7 @@ cmd_sync() {
         
         cmd_newsync "$source_path"
         synced_count=$((synced_count + 1))
-    done < "$TRACKEDFOLDERLIST"
+    done < "$TRACKED_ITEMS"
     
     echo "[INFO] Processed $synced_count tracked items"
 }

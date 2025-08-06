@@ -45,7 +45,7 @@ cmd_remove() {
     fi
     
     # Check if this file is tracked
-    if [[ ! -f "$TRACKEDFOLDERLIST" ]]; then
+    if [[ ! -f "$TRACKED_ITEMS" ]]; then
         log_error "No tracked files found"
         return 1
     fi
@@ -60,7 +60,7 @@ cmd_remove() {
             tracked_path="$line"
             break
         fi
-    done < "$TRACKEDFOLDERLIST"
+    done < "$TRACKED_ITEMS"
     
     if [[ -z "$tracked_path" ]]; then
         log_error "$input is not being tracked"
@@ -150,11 +150,11 @@ cmd_remove() {
         if [[ "$line" != "$tracked_path" ]]; then
             echo "$line" >> "$temp_file"
         fi
-    done < "$TRACKEDFOLDERLIST"
+    done < "$TRACKED_ITEMS"
 
     # Overwrite the original list with the temp file's content using redirection.
     # This follows the symlink and preserves it.
-    cat "$temp_file" > "$TRACKEDFOLDERLIST"
+    cat "$temp_file" > "$TRACKED_ITEMS"
 
     # Clean up the temporary file
     rm "$temp_file"
@@ -162,8 +162,8 @@ cmd_remove() {
     log_success "Removed from tracking: $tracked_path"
     
     # If tracking file is now empty, remove it
-    if [[ ! -s "$TRACKEDFOLDERLIST" ]]; then
-        rm "$TRACKEDFOLDERLIST"
+    if [[ ! -s "$TRACKED_ITEMS" ]]; then
+        rm "$TRACKED_ITEMS"
         log_info "No more tracked files, removed tracking list"
     fi
 }

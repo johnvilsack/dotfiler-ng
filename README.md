@@ -223,21 +223,28 @@ rm ~/.dotfiles/mac/files/HOME/.config/some-app/file.conf
 
 ### ✅ **Right Way**: Proper Deletion Process
 
-**To Remove Individual Files:**
+**✅ Recommended: Use `dotfiler delete` (New!)**
 ```bash
-# 1. Remove from dotfiler management
-dotfiler remove ~/.config/some-app/unwanted-file.conf
+# Permanently delete with cross-system enforcement
+dotfiler delete ~/.config/unwanted-app
 
-# 2. Delete the file (now it's a regular file, not symlinked)
-rm ~/.config/some-app/unwanted-file.conf
+# What this does:
+# 1. Creates tombstone (prevents resurrection)
+# 2. Adds to ignore list (prevents re-tracking)
+# 3. Removes from repository
+# 4. Removes from tracking (if directly tracked)
+# 5. Deletes from current filesystem
+# 6. Enforces deletion on other systems for 90 days
 ```
 
-**To Remove Entire Directories:**
+**Alternative: Manual Process (Old Way)**
 ```bash
-# 1. Remove from dotfiler management  
-dotfiler remove ~/.config/some-app
+# For individual files:
+dotfiler remove ~/.config/some-app/unwanted-file.conf  # ⚠️ May fail if parent tracked
+rm ~/.config/some-app/unwanted-file.conf
 
-# 2. Delete the directory (now it's regular files, not symlinked)
+# For entire directories:
+dotfiler remove ~/.config/some-app
 rm -rf ~/.config/some-app
 ```
 
@@ -270,6 +277,76 @@ dotfiler build  # File stays gone - not in repo anymore
 ```
 
 **Pro Tip**: Use `dotfiler list` to see what's currently tracked before making changes.
+
+## Advanced Deletion Management
+
+Dotfiler now includes a sophisticated deletion system with **tombstoning** to handle the "parent directory problem" and ensure deletions work correctly across multiple machines.
+
+### The Problem Solved
+
+**Before**: If you tracked `~/.config/kitty` and later wanted to delete just `unwanted.conf`:
+```bash
+# ❌ This failed - couldn't remove individual files from tracked directories
+dotfiler remove ~/.config/kitty/unwanted.conf  # Error: not tracked individually
+rm ~/.config/kitty/unwanted.conf               # File resurrects on next build!
+```
+
+**Now**: Use `dotfiler delete` for bulletproof deletion:
+```bash
+# ✅ This works perfectly
+dotfiler delete ~/.config/kitty/unwanted.conf
+# Works even though ~/.config/kitty is tracked as a directory
+```
+
+### New Configuration Files
+
+Dotfiler now uses three configuration files (auto-migrates from old format):
+- **`tracked.conf`** - Items being actively managed
+- **`ignored.conf`** - Items to permanently ignore
+- **`deleted.conf`** - Deletion tombstones with timestamps
+
+### Cross-Machine Deletion Enforcement
+
+**Scenario**: Delete file on Machine A, sync to Machine B
+```bash
+# Machine A
+dotfiler delete ~/.config/unwanted-app
+
+# Machine B (runs build within 90 days)
+dotfiler build
+# [WARNING] Enforcing deletion on this system: ~/.config/unwanted-app
+# File automatically removed on Machine B too!
+```
+
+### Tombstone Lifecycle
+
+| Days Since Deletion | Behavior |
+|---------------------|----------|
+| **0-90 days** | 🚫 **Active Enforcement** - Deleted on any system that runs build |
+| **90-120 days** | 🛡️ **Passive Protection** - Ignored if found, but not actively deleted |
+| **120+ days** | 🧹 **Auto-Cleanup** - Tombstone removed if file doesn't exist |
+
+### Advanced Use Cases
+
+**Delete files within tracked directories:**
+```bash
+dotfiler add ~/.config/kitty              # Track directory
+dotfiler delete ~/.config/kitty/debug.log # Delete specific file - works!
+```
+
+**Handle automated files that keep returning:**
+```bash
+dotfiler delete ~/.config/app/cache.db
+# If file keeps reappearing, tombstone stays active indefinitely
+# ensuring it's always ignored
+```
+
+**Clean deletion across team/multiple machines:**
+```bash
+# Team member adds unwanted file
+git pull  # Gets the deletion tombstone
+dotfiler build  # Automatically removes unwanted file locally
+```
 
 ## Installation Options
 

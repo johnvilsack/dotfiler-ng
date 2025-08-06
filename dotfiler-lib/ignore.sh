@@ -1,17 +1,35 @@
 #!/usr/bin/env bash
 
-# Initialize ignore list file if it doesn't exist
-IGNORELIST="$HOME/.config/dotfiler/ignore-list.txt"
-
+# Configuration files are now defined in main dotfiler script
 # Ensure config directory exists
-mkdir -p "$(dirname "$IGNORELIST")"
+mkdir -p "$CONFIG_DIR"
+
+# Migration function: migrate legacy files to new format
+migrate_config_files() {
+    # Migrate tracked-folders.txt to tracked.conf
+    if [[ -f "$TRACKED_ITEMS" ]] && [[ ! -f "$TRACKED_ITEMS" ]]; then
+        log_info "Migrating tracked-folders.txt to tracked.conf"
+        cp "$TRACKED_ITEMS" "$TRACKED_ITEMS"
+    fi
+    
+    # Migrate ignore-list.txt to ignored.conf  
+    if [[ -f "$IGNORED_ITEMS" ]] && [[ ! -f "$IGNORED_ITEMS" ]]; then
+        log_info "Migrating ignore-list.txt to ignored.conf"
+        cp "$IGNORED_ITEMS" "$IGNORED_ITEMS"
+    fi
+    
+    # Create deleted.conf if it doesn't exist
+    if [[ ! -f "$DELETED_ITEMS" ]]; then
+        touch "$DELETED_ITEMS"
+    fi
+}
 
 # Check if ignoring a pattern would affect any tracked files
 find_affected_tracked_files() {
     local ignore_pattern="$1"
     local affected_files=()
     
-    if [[ ! -f "$TRACKEDFOLDERLIST" ]]; then
+    if [[ ! -f "$TRACKED_ITEMS" ]]; then
         return 1
     fi
     
@@ -32,7 +50,7 @@ find_affected_tracked_files() {
             $ignore_pattern) affected_files+=("$tracked_line") ;;
         esac
         
-    done < "$TRACKEDFOLDERLIST"
+    done < "$TRACKED_ITEMS"
     
     if [[ ${#affected_files[@]} -gt 0 ]]; then
         log_warning "Ignoring '$ignore_pattern' would affect these tracked files:"
@@ -50,7 +68,7 @@ find_conflicting_ignore_patterns() {
     local add_path="$1"
     local conflicting_patterns=()
     
-    if [[ ! -f "$IGNORELIST" ]]; then
+    if [[ ! -f "$IGNORED_ITEMS" ]]; then
         return 1
     fi
     
@@ -76,7 +94,7 @@ find_conflicting_ignore_patterns() {
             $pattern) conflicting_patterns+=("$pattern") ;;
         esac
         
-    done < "$IGNORELIST"
+    done < "$IGNORED_ITEMS"
     
     if [[ ${#conflicting_patterns[@]} -gt 0 ]]; then
         log_warning "Adding '$add_path' conflicts with these ignore patterns:"
@@ -101,6 +119,9 @@ prompt_user() {
 }
 
 cmd_ignore() {
+    # Ensure config migration happens
+    migrate_config_files
+    
     local target="$1"
     
     if [[ -z "$target" ]]; then
@@ -124,7 +145,7 @@ cmd_ignore() {
     fi
     
     # Check if already in ignore list
-    if [[ -f "$IGNORELIST" ]] && grep -Fxq "$pattern" "$IGNORELIST"; then
+    if [[ -f "$IGNORED_ITEMS" ]] && grep -Fxq "$pattern" "$IGNORED_ITEMS"; then
         log_warning "Pattern '$pattern' is already in ignore list"
         return 0
     fi
@@ -139,7 +160,7 @@ cmd_ignore() {
     fi
     
     # Add to ignore list
-    echo "$pattern" >> "$IGNORELIST"
+    echo "$pattern" >> "$IGNORED_ITEMS"
     log_success "Added '$pattern' to ignore list"
     
     # Remove any matching entries from tracking list to prevent conflicts
@@ -154,7 +175,7 @@ cmd_ignore() {
 remove_matching_from_tracking() {
     local ignore_pattern="$1"
     
-    if [[ ! -f "$TRACKEDFOLDERLIST" ]]; then
+    if [[ ! -f "$TRACKED_ITEMS" ]]; then
         return 0
     fi
     
@@ -193,16 +214,16 @@ remove_matching_from_tracking() {
         else
             echo "$tracked_line" >> "$temp_file"
         fi
-    done < "$TRACKEDFOLDERLIST"
+    done < "$TRACKED_ITEMS"
     
     if [[ $removed_count -gt 0 ]]; then
         # Overwrite original file
-        cat "$temp_file" > "$TRACKEDFOLDERLIST"
+        cat "$temp_file" > "$TRACKED_ITEMS"
         log_success "Removed $removed_count conflicting entries from tracking list"
         
         # Remove tracking file if empty
-        if [[ ! -s "$TRACKEDFOLDERLIST" ]]; then
-            rm "$TRACKEDFOLDERLIST"
+        if [[ ! -s "$TRACKED_ITEMS" ]]; then
+            rm "$TRACKED_ITEMS"
             log_info "No more tracked files, removed tracking list"
         fi
     fi
@@ -215,7 +236,7 @@ should_ignore() {
     local path="$1"
     
     # Return false (don't ignore) if ignore list doesn't exist
-    [[ ! -f "$IGNORELIST" ]] && return 1
+    [[ ! -f "$IGNORED_ITEMS" ]] && return 1
     
     # Convert path to tracking format for comparison
     local path_as_tracked
@@ -279,7 +300,7 @@ should_ignore() {
             $pattern) return 0 ;;
         esac
         
-    done < "$IGNORELIST"
+    done < "$IGNORED_ITEMS"
     
     return 1  # Don't ignore
 }
@@ -307,7 +328,7 @@ remove_ignored_from_repo() {
     log_info "Scanning repository for ignored files..."
     
     # Also check for currently tracked files that should be ignored
-    if [[ -f "$TRACKEDFOLDERLIST" ]]; then
+    if [[ -f "$TRACKED_ITEMS" ]]; then
         while IFS= read -r tracked_line; do
             [[ -z "$tracked_line" ]] && continue
             
@@ -405,7 +426,7 @@ remove_ignored_from_repo() {
                 remove_from_tracking "$tracked_line"
             fi
             
-        done < "$TRACKEDFOLDERLIST"
+        done < "$TRACKED_ITEMS"
     fi
 }
 
@@ -413,7 +434,7 @@ remove_ignored_from_repo() {
 remove_from_tracking() {
     local line_to_remove="$1"
     
-    if [[ ! -f "$TRACKEDFOLDERLIST" ]]; then
+    if [[ ! -f "$TRACKED_ITEMS" ]]; then
         return 0
     fi
     
@@ -425,24 +446,24 @@ remove_from_tracking() {
         if [[ "$line" != "$line_to_remove" ]]; then
             echo "$line" >> "$temp_file"
         fi
-    done < "$TRACKEDFOLDERLIST"
+    done < "$TRACKED_ITEMS"
     
     # Overwrite original file
-    cat "$temp_file" > "$TRACKEDFOLDERLIST"
+    cat "$temp_file" > "$TRACKED_ITEMS"
     rm "$temp_file"
     
     log_info "Removed from tracking: $line_to_remove"
     
     # Remove tracking file if empty
-    if [[ ! -s "$TRACKEDFOLDERLIST" ]]; then
-        rm "$TRACKEDFOLDERLIST"
+    if [[ ! -s "$TRACKED_ITEMS" ]]; then
+        rm "$TRACKED_ITEMS"
         log_info "No more tracked files, removed tracking list"
     fi
 }
 
 # Command to clean up all ignored files from the repository
 cmd_cleanup() {
-    if [[ ! -f "$IGNORELIST" ]]; then
+    if [[ ! -f "$IGNORED_ITEMS" ]]; then
         log_info "No ignore list found - nothing to clean up"
         return 0
     fi
@@ -477,7 +498,7 @@ cmd_unmanage() {
     fi
     
     # Check if this exact path is being tracked
-    if [[ ! -f "$TRACKEDFOLDERLIST" ]]; then
+    if [[ ! -f "$TRACKED_ITEMS" ]]; then
         log_error "No tracked files found"
         return 1
     fi
@@ -489,7 +510,7 @@ cmd_unmanage() {
             is_tracked=true
             break
         fi
-    done < "$TRACKEDFOLDERLIST"
+    done < "$TRACKED_ITEMS"
     
     if [[ "$is_tracked" != true ]]; then
         log_error "Path '$target' is not being tracked (exact match required)"
@@ -497,7 +518,7 @@ cmd_unmanage() {
         while IFS= read -r tracked_line; do
             [[ -z "$tracked_line" ]] && continue
             echo "  - $tracked_line"
-        done < "$TRACKEDFOLDERLIST"
+        done < "$TRACKED_ITEMS"
         return 1
     fi
     
@@ -636,16 +657,16 @@ cmd_unmanage() {
         if [[ "$line" != "$target_tracked" ]]; then
             echo "$line" >> "$temp_file"
         fi
-    done < "$TRACKEDFOLDERLIST"
+    done < "$TRACKED_ITEMS"
     
-    cat "$temp_file" > "$TRACKEDFOLDERLIST"
+    cat "$temp_file" > "$TRACKED_ITEMS"
     rm "$temp_file"
     
     log_success "Unmanaged: $target_tracked"
     
     # Remove tracking file if empty
-    if [[ ! -s "$TRACKEDFOLDERLIST" ]]; then
-        rm "$TRACKEDFOLDERLIST"
+    if [[ ! -s "$TRACKED_ITEMS" ]]; then
+        rm "$TRACKED_ITEMS"
         log_info "No more tracked files, removed tracking list"
     fi
 }
@@ -655,7 +676,7 @@ remove_from_ignore_list() {
     local add_path="$1"
     
     # Don't do anything if ignore list doesn't exist
-    if [[ ! -f "$IGNORELIST" ]]; then
+    if [[ ! -f "$IGNORED_ITEMS" ]]; then
         return 0
     fi
     
@@ -704,16 +725,16 @@ remove_from_ignore_list() {
         else
             echo "$ignore_pattern" >> "$temp_file"
         fi
-    done < "$IGNORELIST"
+    done < "$IGNORED_ITEMS"
     
     if [[ $removed_count -gt 0 ]]; then
         # Overwrite original ignore list
-        cat "$temp_file" > "$IGNORELIST"
+        cat "$temp_file" > "$IGNORED_ITEMS"
         log_success "Removed $removed_count conflicting patterns from ignore list"
         
         # Remove ignore file if empty
-        if [[ ! -s "$IGNORELIST" ]]; then
-            rm "$IGNORELIST"
+        if [[ ! -s "$IGNORED_ITEMS" ]]; then
+            rm "$IGNORED_ITEMS"
             log_info "No more ignore patterns, removed ignore list"
         fi
     fi
@@ -724,7 +745,7 @@ remove_from_ignore_list() {
 # Cleanup ignored files that are currently managed (symlinked or in repo)
 # This implements Option A: complete un-management
 cleanup_ignored_files() {
-    if [[ ! -f "$IGNORELIST" ]] || [[ ! -f "$TRACKEDFOLDERLIST" ]]; then
+    if [[ ! -f "$IGNORED_ITEMS" ]] || [[ ! -f "$TRACKED_ITEMS" ]]; then
         return 0
     fi
     
@@ -858,15 +879,15 @@ cleanup_ignored_files() {
             echo "$tracked_line" >> "$temp_tracking_file"
         fi
         
-    done < "$TRACKEDFOLDERLIST"
+    done < "$TRACKED_ITEMS"
     
     # Update tracking list
-    cat "$temp_tracking_file" > "$TRACKEDFOLDERLIST"
+    cat "$temp_tracking_file" > "$TRACKED_ITEMS"
     rm "$temp_tracking_file"
     
     # Remove tracking file if empty
-    if [[ ! -s "$TRACKEDFOLDERLIST" ]]; then
-        rm "$TRACKEDFOLDERLIST"
+    if [[ ! -s "$TRACKED_ITEMS" ]]; then
+        rm "$TRACKED_ITEMS"
         log_info "No more tracked files, removed tracking list"
     fi
 }

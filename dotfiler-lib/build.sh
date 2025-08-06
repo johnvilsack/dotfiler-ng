@@ -15,13 +15,20 @@ cmd_build() {
         esac
     done
     
+    # Ensure config migration happens
+    migrate_config_files
+    
     # First cleanup any ignored files that are currently managed
     cleanup_ignored_files
+    
+    # Cleanup expired deletion tombstones and enforce deletions
+    cleanup_deleted_items
+    enforce_deletions
     
     # Auto-sync new files before building symlinks (unless --repo-first is specified)
     if [[ "$repo_first" == true ]]; then
         log_info "Repo-first mode: Skipping sync, building symlinks from repository only"
-    elif [[ -f "$TRACKEDFOLDERLIST" ]]; then
+    elif [[ -f "$TRACKED_ITEMS" ]]; then
         log_info "Syncing new files before building symlinks..."
         
         # Call sync logic directly without the error check since we already know tracked files exist
@@ -52,7 +59,7 @@ cmd_build() {
             
             cmd_newsync "$source_path"
             synced_count=$((synced_count + 1))
-        done < "$TRACKEDFOLDERLIST"
+        done < "$TRACKED_ITEMS"
         
         log_info "Processed $synced_count tracked items for sync"
     else

@@ -1,8 +1,11 @@
 # Show what's being tracked
 cmd_list() {
+    # Ensure config migration happens
+    migrate_config_files
+    
     echo "[INFO] Listing tracked dotfiles..."
 
-    if [[ ! -f "$TRACKEDFOLDERLIST" ]]; then
+    if [[ ! -f "$TRACKED_ITEMS" ]]; then
         echo "[ERROR] No tracked files found"
         return 1
     fi
@@ -26,5 +29,5 @@ cmd_list() {
     fi
     
     echo "  - $line"
-    done < "$TRACKEDFOLDERLIST"
+    done < "$TRACKED_ITEMS"
 }
