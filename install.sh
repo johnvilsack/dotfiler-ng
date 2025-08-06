@@ -79,6 +79,18 @@ rm -rf /tmp/dotfiler-ng
 echo ""
 echo "✓ dotfiler-ng installed successfully!"
 echo ""
+
+# Run interactive configuration
+echo "Starting interactive configuration..."
+echo ""
+if command -v "$INSTALL_DIR/dotfiler" >/dev/null 2>&1; then
+    "$INSTALL_DIR/dotfiler" config
+else
+    echo "⚠ Could not run dotfiler config automatically"
+    echo "Please run 'dotfiler config' to complete setup"
+fi
+
+echo ""
 echo "Key features:"
 echo "  • Automatic deletion detection"
 echo "  • Rsync-based sync engine"  
@@ -86,13 +98,7 @@ echo "  • Symlink migration"
 echo "  • Cross-machine coordination"
 echo ""
 echo "Quick start:"
+echo "  dotfiler config           # Interactive setup (run again anytime)"
 echo "  dotfiler help             # Show all commands"
-echo "  dotfiler status           # Show configuration"  
 echo "  dotfiler add ~/.zshrc     # Track a file"
 echo "  dotfiler sync             # Sync dotfiles"
-echo ""
-echo "Migration from original dotfiler:"
-echo "  dotfiler sync --repo-first    # Migrate existing setup"
-echo ""
-echo "Repository will default to: \${GITHUBPATH:-\$HOME/github}/dotfiles"
-echo "Configure in: ~/.config/dotfiler/config"

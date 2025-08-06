@@ -21,6 +21,7 @@ source "$LIB_DIR/remove.sh"
 source "$LIB_DIR/list.sh"
 source "$LIB_DIR/sync.sh"
 source "$LIB_DIR/delete.sh"
+source "$LIB_DIR/init.sh"
 
 # Help function
 show_help() {
@@ -39,12 +40,15 @@ COMMANDS:
         --repo-first  Fresh install mode (repo overwrites filesystem)
     build [options]   Alias for sync (backward compatibility)
         --repo-first  Fresh install mode (repo overwrites filesystem)
+    config            Interactive configuration and setup
+    init              Alias for config
     list              List all tracked items
     status            Show sync status and changes
     version           Show version information
     help              Show this help message
 
 EXAMPLES:
+    $PROGRAM_NAME config           # Interactive setup
     $PROGRAM_NAME add ~/.zshrc
     $PROGRAM_NAME add ~/.config/nvim  
     $PROGRAM_NAME ignore "*.log"
@@ -95,6 +99,10 @@ main() {
         "build")
             shift
             cmd_sync "$@"  # Backward compatibility alias
+            ;;
+        "config"|"init")
+            shift
+            cmd_config "$@"
             ;;
         "list")
             cmd_list

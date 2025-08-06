@@ -11,4 +11,15 @@ echo "Installing dotfiler to $INSTALL_DIR..."
 cp dotfiler "$INSTALL_DIR/" && cp -rf dotfiler_lib "$INSTALL_DIR/"
 chmod +x "$INSTALL_DIR/dotfiler"
 
-echo "dotfiler installed!"
+echo "✓ dotfiler installed!"
+echo ""
+
+# Run interactive configuration
+echo "Starting interactive configuration..."
+echo ""
+if command -v "$INSTALL_DIR/dotfiler" >/dev/null 2>&1; then
+    "$INSTALL_DIR/dotfiler" config
+else
+    echo "⚠ Could not run dotfiler config automatically"
+    echo "Please run 'dotfiler config' to complete setup"
+fi
