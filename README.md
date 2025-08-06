@@ -8,21 +8,14 @@ Next-generation dotfiles management with rsync backend, replacing symlink-based 
 curl -fsSL https://raw.githubusercontent.com/johnvilsack/dotfiler-ng/refs/heads/main/install.sh | bash
 ```
 
-## What's Revolutionary in NG
+## What's New in NG
 
-### 🚀 Revolutionary Architecture  
-- **True Rsync Orchestrator**: Not just a wrapper - leverages rsync's full power
-- **Automatic Deletion Detection**: Delete files normally - next sync detects and manages
-- **Zero Intervention Workflows**: Minimal user commands needed
-- **Automatic Symlink Migration**: Seamlessly converts existing symlink setups
-- **Enhanced Filtering**: Unified rsync filters from ignored.conf + .gitignore hierarchy
-
-### 🔥 Core Improvements
+### Core Improvements
 - **No More Symlinks**: Copies actual files instead of creating symlinks
-- **Single Rsync Operations**: Complex multi-step processes now single rsync calls
-- **Auto-Discovery**: Detects deletions, new files, and symlinks automatically
-- **Better Performance**: Leverages rsync's optimized sync algorithms
-- **Fresh Install Mode**: `--repo-first` flag for clean installations
+- **Rsync Backend**: Reliable, battle-tested synchronization with automatic deletion detection
+- **Automatic Workflows**: Delete files normally - next sync detects and manages them
+- **Better Ignore Support**: Direct .gitignore integration plus custom patterns
+- **Fresh Install Mode**: `--repo-first` flag for clean installations and symlink migration
 
 ### Commands
 
@@ -54,17 +47,17 @@ Configuration:
 └── deleted.conf        # Tombstone entries
 ```
 
-### Revolutionary Sync Process
+### Sync Process
 
 1. **Tombstone Lifecycle**: Manage 90/120-day deletion enforcement
 2. **Symlink Migration**: Auto-convert existing symlinks to real files
-3. **Auto-Deletion Detection**: `rsync --delete --dry-run` detects filesystem deletions
+3. **Deletion Detection**: Automatically detects filesystem deletions
 4. **Unified Filtering**: Single rsync operation with combined ignore patterns
-5. **Intelligent Sync**: Bidirectional sync with rsync's optimized algorithms
+5. **Bidirectional Sync**: Filesystem ↔ Repository synchronization
 6. **Cross-Machine Enforcement**: Git-propagated deletion coordination
 7. **Auto-Discovery**: Automatically track new repository files
 
-**Key Innovation**: Just delete files normally - next `dotfiler sync` detects and manages everything!
+**Key Feature**: Just delete files normally - next `dotfiler sync` detects and manages everything!
 
 ### Migration from Original Dotfiler
 

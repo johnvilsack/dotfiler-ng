@@ -18,7 +18,7 @@ cmd_delete() {
     local repo_path="$(get_repo_path "$full_path")"
     
     # Inform about new workflow
-    log_info "Revolutionary rsync workflow: You can also just delete files normally"
+    log_info "Auto-detection available: You can also just delete files normally"
     log_info "Next 'dotfiler sync' will auto-detect and manage the deletion"
     echo ""
     

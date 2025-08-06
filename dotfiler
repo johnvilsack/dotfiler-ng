@@ -10,7 +10,7 @@ PROGRAM_NAME="dotfiler"
 
 # Determine script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIB_DIR="$SCRIPT_DIR/lib"
+LIB_DIR="$SCRIPT_DIR/dotfiler_lib"
 
 # Source library files
 source "$LIB_DIR/common.sh"
@@ -25,7 +25,7 @@ source "$LIB_DIR/delete.sh"
 # Help function
 show_help() {
     cat << EOF
-$PROGRAM_NAME v$VERSION - Next-generation dotfiles management with rsync
+$PROGRAM_NAME v$VERSION - Dotfiles management with rsync
 
 USAGE:
     $PROGRAM_NAME <command> [options]
@@ -35,7 +35,7 @@ COMMANDS:
     remove <path>     Remove a file or directory from tracking
     ignore <pattern>  Add a pattern to ignore list  
     delete <path>     Delete and tombstone a file/directory
-    sync [options]    Revolutionary rsync-powered dotfiles sync
+    sync [options]    Sync dotfiles using rsync
         --repo-first  Fresh install mode (repo overwrites filesystem)
     build [options]   Alias for sync (backward compatibility)
         --repo-first  Fresh install mode (repo overwrites filesystem)

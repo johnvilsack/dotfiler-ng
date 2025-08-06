@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# sync.sh - Revolutionary rsync-native sync engine
+# sync.sh - Rsync-based sync engine
 # Compatible with bash 3.2+ (macOS default)
 
 cmd_sync() {
@@ -19,7 +19,7 @@ cmd_sync() {
         esac
     done
     
-    log_info "Starting revolutionary rsync-powered sync..."
+    log_info "Starting dotfiles sync..."
     
     # Validate configuration
     if ! validate_config; then
@@ -39,7 +39,7 @@ cmd_sync() {
     
     # Phase 3: Automatic deletion detection (unless repo-first)
     if [[ "$repo_first" == "false" ]]; then
-        log_info "Phase 3: Auto-detecting deletions with rsync"
+        log_info "Phase 3: Detecting deletions"
         auto_detect_deletions
     else
         log_info "Phase 3: Skipping deletion detection (--repo-first mode)"
@@ -67,7 +67,7 @@ cmd_sync() {
         auto_add_new_files_rsync
     fi
     
-    log_success "Revolutionary sync completed successfully"
+    log_success "Sync completed successfully"
     return 0
 }
 
@@ -193,7 +193,7 @@ sync_filesystem_to_repo_rsync() {
         return 0
     fi
     
-    log_info "Using rsync for intelligent filesystem → repository sync"
+    log_info "Syncing filesystem to repository"
     
     local filter_file="$(generate_rsync_filters)"
     local synced_count=0
@@ -238,7 +238,7 @@ sync_filesystem_to_repo_rsync() {
     done < "$TRACKED_ITEMS"
     
     if [[ $synced_count -gt 0 ]]; then
-        log_success "Rsync synced $synced_count items to repository"
+        log_success "Synced $synced_count items to repository"
     fi
     
     # Cleanup
@@ -254,7 +254,7 @@ sync_repo_to_filesystem_rsync() {
         return 0
     fi
     
-    log_info "Using rsync for intelligent repository → filesystem sync"
+    log_info "Syncing repository to filesystem"
     
     local filter_file="$(generate_rsync_filters)"
     local rsync_opts="-av --filter=merge $filter_file"
@@ -309,7 +309,7 @@ sync_repo_to_filesystem_rsync() {
     fi
     
     if [[ $synced_count -gt 0 ]]; then
-        log_success "Rsync deployed $synced_count items to filesystem"
+        log_success "Deployed $synced_count items to filesystem"
     fi
     
     # Cleanup
@@ -478,7 +478,7 @@ auto_add_new_files_rsync() {
     if [[ $added_count -gt 0 ]]; then
         # Sort and remove duplicates
         sort -u "$TRACKED_ITEMS" -o "$TRACKED_ITEMS"
-        log_success "Auto-added $added_count new items using rsync discovery"
+        log_success "Auto-added $added_count new items from repository"
     fi
     
     # Cleanup
