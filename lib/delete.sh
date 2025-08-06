@@ -8,6 +8,8 @@ cmd_delete() {
     # Validate arguments
     if [[ -z "$path" ]]; then
         log_error "Usage: $PROGRAM_NAME delete <path>"
+        log_info "Note: Automatic deletion detection is now available!"
+        log_info "Simply delete files in filesystem - next sync will detect and manage them"
         return 1
     fi
     
@@ -15,27 +17,46 @@ cmd_delete() {
     local full_path="$(normalize_path "$path")"
     local repo_path="$(get_repo_path "$full_path")"
     
+    # Inform about new workflow
+    log_info "Revolutionary rsync workflow: You can also just delete files normally"
+    log_info "Next 'dotfiler sync' will auto-detect and manage the deletion"
+    echo ""
+    
     # Confirm deletion
-    log_warning "This will delete '$repo_path' from:"
+    log_warning "Manual deletion - this will delete '$repo_path' from:"
     echo "  - Filesystem: $full_path"
     echo "  - Repository: $REPO_FILES/$repo_path"
     echo "  - Cross-machine enforcement for $(get_config DELETE_ACTIVE_DAYS 90) days"
     
-    if ! confirm "Proceed with deletion?"; then
+    if ! confirm "Proceed with manual deletion?"; then
         return 1
     fi
+    
+    # Use the same process as auto-detection for consistency
+    manual_deletion_process "$repo_path" "$full_path"
+    
+    return 0
+}
+
+# Process deletion (used by both manual delete and auto-detection)
+manual_deletion_process() {
+    local repo_path="$1"
+    local full_path="$2"
     
     # Step 1: Add tombstone
     add_tombstone "$repo_path"
     
-    # Step 2: Add to ignore list (prevent re-adding)
+    # Step 2: Remove from tracking
+    remove_from_tracking "$repo_path"
+    
+    # Step 3: Add to ignore list (prevent re-adding)
     if [[ -f "$IGNORED_ITEMS" ]] && ! grep -q "^${repo_path}$" "$IGNORED_ITEMS"; then
         echo "$repo_path" >> "$IGNORED_ITEMS"
         sort -u "$IGNORED_ITEMS" -o "$IGNORED_ITEMS"
         log_info "Added to ignore list: $repo_path"
     fi
     
-    # Step 3: Remove from repository
+    # Step 4: Remove from repository
     local repo_file_path="$REPO_FILES/$repo_path"
     if [[ -e "$repo_file_path" ]]; then
         rm -rf "$repo_file_path"
@@ -45,23 +66,25 @@ cmd_delete() {
         remove_empty_dirs "$(dirname "$repo_file_path")" "$REPO_FILES"
     fi
     
-    # Step 4: Remove from tracking
-    if [[ -f "$TRACKED_ITEMS" ]]; then
-        grep -v "^${repo_path}$" "$TRACKED_ITEMS" > "$TRACKED_ITEMS.tmp" || true
-        mv "$TRACKED_ITEMS.tmp" "$TRACKED_ITEMS"
-        log_info "Removed from tracking: $repo_path"
-    fi
-    
     # Step 5: Delete from filesystem
     if path_exists "$full_path"; then
         rm -rf "$full_path"
         log_success "Deleted from filesystem: $full_path"
     fi
     
-    log_success "Successfully deleted: $repo_path"
+    log_success "Successfully processed deletion: $repo_path"
     log_info "Tombstone will enforce deletion across machines for $(get_config DELETE_ACTIVE_DAYS 90) days"
+}
+
+# Remove item from tracking (shared function)
+remove_from_tracking() {
+    local item="$1"
     
-    return 0
+    if [[ -f "$TRACKED_ITEMS" ]]; then
+        grep -v "^${item}$" "$TRACKED_ITEMS" > "$TRACKED_ITEMS.tmp" || true
+        mv "$TRACKED_ITEMS.tmp" "$TRACKED_ITEMS"
+        log_info "Removed from tracking: $item"
+    fi
 }
 
 # Add tombstone entry

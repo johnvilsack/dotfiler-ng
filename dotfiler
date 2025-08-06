@@ -19,7 +19,7 @@ source "$LIB_DIR/add.sh"
 source "$LIB_DIR/ignore.sh"
 source "$LIB_DIR/remove.sh"
 source "$LIB_DIR/list.sh"
-source "$LIB_DIR/build.sh"
+source "$LIB_DIR/sync.sh"
 source "$LIB_DIR/delete.sh"
 
 # Help function
@@ -33,9 +33,11 @@ USAGE:
 COMMANDS:
     add <path>        Add a file or directory to tracking
     remove <path>     Remove a file or directory from tracking
-    ignore <pattern>  Add a pattern to ignore list
+    ignore <pattern>  Add a pattern to ignore list  
     delete <path>     Delete and tombstone a file/directory
-    build [options]   Sync dotfiles between repo and filesystem
+    sync [options]    Revolutionary rsync-powered dotfiles sync
+        --repo-first  Fresh install mode (repo overwrites filesystem)
+    build [options]   Alias for sync (backward compatibility)
         --repo-first  Fresh install mode (repo overwrites filesystem)
     list              List all tracked items
     status            Show sync status and changes
@@ -44,10 +46,10 @@ COMMANDS:
 
 EXAMPLES:
     $PROGRAM_NAME add ~/.zshrc
-    $PROGRAM_NAME add ~/.config/nvim
+    $PROGRAM_NAME add ~/.config/nvim  
     $PROGRAM_NAME ignore "*.log"
-    $PROGRAM_NAME build
-    $PROGRAM_NAME build --repo-first
+    $PROGRAM_NAME sync
+    $PROGRAM_NAME sync --repo-first
 
 CONFIG:
     Configuration stored in: ~/.config/dotfiler/
@@ -86,9 +88,13 @@ main() {
             shift
             cmd_delete "$@"
             ;;
+        "sync")
+            shift
+            cmd_sync "$@"
+            ;;
         "build")
             shift
-            cmd_build "$@"
+            cmd_sync "$@"  # Backward compatibility alias
             ;;
         "list")
             cmd_list

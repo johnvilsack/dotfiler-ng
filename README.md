@@ -8,13 +8,20 @@ Next-generation dotfiles management with rsync backend, replacing symlink-based 
 curl -fsSL https://raw.githubusercontent.com/johnvilsack/dotfiler-ng/refs/heads/main/install.sh | bash
 ```
 
-## What's New in NG
+## What's Revolutionary in NG
 
-### Core Improvements
+### 🚀 Revolutionary Architecture  
+- **True Rsync Orchestrator**: Not just a wrapper - leverages rsync's full power
+- **Automatic Deletion Detection**: Delete files normally - next sync detects and manages
+- **Zero Intervention Workflows**: Minimal user commands needed
+- **Automatic Symlink Migration**: Seamlessly converts existing symlink setups
+- **Enhanced Filtering**: Unified rsync filters from ignored.conf + .gitignore hierarchy
+
+### 🔥 Core Improvements
 - **No More Symlinks**: Copies actual files instead of creating symlinks
-- **Rsync Backend**: Reliable, battle-tested synchronization
-- **Automatic Deletion Detection**: Detects deletions and manages them across machines
-- **Better Ignore Support**: Direct .gitignore integration plus custom patterns
+- **Single Rsync Operations**: Complex multi-step processes now single rsync calls
+- **Auto-Discovery**: Detects deletions, new files, and symlinks automatically
+- **Better Performance**: Leverages rsync's optimized sync algorithms
 - **Fresh Install Mode**: `--repo-first` flag for clean installations
 
 ### Commands
@@ -25,8 +32,9 @@ curl -fsSL https://raw.githubusercontent.com/johnvilsack/dotfiler-ng/refs/heads/
 | `remove <path>` | Remove from tracking | `dotfiler remove ~/.config/nvim` |
 | `ignore <pattern>` | Add to ignore list | `dotfiler ignore "*.log"` |
 | `delete <path>` | Delete and tombstone | `dotfiler delete ~/.config/old-app` |
-| `build` | Sync dotfiles | `dotfiler build` |
-| `build --repo-first` | Fresh install mode | `dotfiler build --repo-first` |
+| `sync` | Revolutionary rsync-powered sync | `dotfiler sync` |
+| `sync --repo-first` | Fresh install mode | `dotfiler sync --repo-first` |
+| `build` | Alias for sync (compatibility) | `dotfiler build` |
 | `list` | Show tracked items | `dotfiler list` |
 | `status` | Show sync status | `dotfiler status` |
 
@@ -46,13 +54,17 @@ Configuration:
 └── deleted.conf        # Tombstone entries
 ```
 
-### Sync Process
+### Revolutionary Sync Process
 
-1. **Cleanup**: Manage tombstones and deletions
-2. **Detection**: Find deleted files using rsync
-3. **Filesystem → Repo**: Copy new/changed files to repository  
-4. **Repo → Filesystem**: Deploy tracked files to system
-5. **Auto-add**: Automatically track new repository files
+1. **Tombstone Lifecycle**: Manage 90/120-day deletion enforcement
+2. **Symlink Migration**: Auto-convert existing symlinks to real files
+3. **Auto-Deletion Detection**: `rsync --delete --dry-run` detects filesystem deletions
+4. **Unified Filtering**: Single rsync operation with combined ignore patterns
+5. **Intelligent Sync**: Bidirectional sync with rsync's optimized algorithms
+6. **Cross-Machine Enforcement**: Git-propagated deletion coordination
+7. **Auto-Discovery**: Automatically track new repository files
+
+**Key Innovation**: Just delete files normally - next `dotfiler sync` detects and manages everything!
 
 ### Migration from Original Dotfiler
 
