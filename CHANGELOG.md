@@ -1,5 +1,8 @@
 # Changelog
 
+## [7.0.0] - 2025-08-07
+- RELEASE: Production Ready
+
 ## [6.0.0] - 2025-08-06
 - RELEASE: Complete Tools
 
