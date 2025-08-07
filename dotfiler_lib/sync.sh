@@ -32,11 +32,10 @@ cmd_sync() {
     cleanup_tombstones
     
     # Phase 2: Symlink migration (if repo-first or detect symlinks)  
-    # TEMPORARILY DISABLED - symlink migration causes hangs
-    # if [[ "$repo_first" == "true" ]] || has_symlinks; then
-    #     log_info "Phase 2: Migrating symlinks to real files"
-    #     migrate_symlinks_to_files
-    # fi
+    if [[ "$repo_first" == "true" ]] || has_symlinks; then
+        log_info "Phase 2: Migrating symlinks to real files"
+        migrate_symlinks_to_files
+    fi
     
     # Phase 3: Automatic deletion detection (unless repo-first)
     if [[ "$repo_first" == "false" ]]; then
@@ -48,31 +47,26 @@ cmd_sync() {
     fi
     
     # Phase 4: Filesystem → Repository sync (unless repo-first)
-    # TEMPORARILY DISABLED - causing hangs during development
-    log_info "Phase 4: Skipping filesystem → repository sync (temporarily disabled)"
-    # if [[ "$repo_first" == "false" ]]; then
-    #     log_info "Phase 4: Syncing filesystem → repository"
-    #     sync_filesystem_to_repo_rsync
-    # else
-    #     log_info "Phase 4: Skipping filesystem → repository (--repo-first mode)"
-    # fi
+    if [[ "$repo_first" == "false" ]]; then
+        log_info "Phase 4: Syncing filesystem → repository"
+        sync_filesystem_to_repo_rsync
+    else
+        log_info "Phase 4: Skipping filesystem → repository (--repo-first mode)"
+    fi
     
     # Phase 5: Repository → Filesystem sync
-    log_info "Phase 5: Skipping repository → filesystem sync (temporarily disabled)"
-    # log_info "Phase 5: Syncing repository → filesystem"
-    # sync_repo_to_filesystem_rsync "$repo_first"
+    log_info "Phase 5: Syncing repository → filesystem"
+    sync_repo_to_filesystem_rsync "$repo_first"
     
     # Phase 6: Cross-machine deletion enforcement
     log_info "Phase 6: Enforcing cross-machine deletions"
     enforce_cross_machine_deletions
     
     # Phase 7: Auto-add new repo files
-    # TEMPORARILY DISABLED - causing hangs and incorrect additions
-    log_info "Phase 7: Skipping auto-add (temporarily disabled)"
-    # if [[ "$(get_config AUTO_ADD_NEW)" == "true" ]]; then
-    #     log_info "Phase 7: Auto-adding new repository files"
-    #     auto_add_new_files_rsync
-    # fi
+    if [[ "$(get_config AUTO_ADD_NEW)" == "true" ]]; then
+        log_info "Phase 7: Auto-adding new repository files"
+        auto_add_new_files_rsync
+    fi
     
     log_success "Sync completed successfully"
     return 0
@@ -85,27 +79,22 @@ auto_detect_deletions() {
         return 0
     fi
     
-    log_info "Auto-deletion detection temporarily disabled for debugging"
-    return 0
+    # Auto-deletion detection enabled
     
     local deletion_count=0
     local temp_deletions="$(mktemp)"
-    
     # Generate rsync filters for current tracked items
     local filter_file="$(generate_rsync_filters)"
-    
     # For each tracked item, check for deletions
     local item_count=0
     local total_items="$(grep -c . "$TRACKED_ITEMS" 2>/dev/null || echo 0)"
-    
     while IFS= read -r item; do
         [[ -z "$item" || "$item" == \#* ]] && continue
         
-        ((item_count++))
+        item_count=$((item_count + 1))
         log_debug "Checking deletions [$item_count/$total_items]: $item"
-        
         local filesystem_path="$(get_filesystem_path "$item")"
-        local repo_path="$REPO_FILES/$item"
+        local repo_path="$REPO_FILES/$(get_repo_path "$filesystem_path")"
         
         # Skip if not in repo (can't detect deletion)
         [[ ! -e "$repo_path" ]] && continue
@@ -114,11 +103,10 @@ auto_detect_deletions() {
         if ! path_exists "$filesystem_path"; then
             log_info "Auto-detected deletion: $item"
             echo "$item" >> "$temp_deletions"
-            ((deletion_count++))
+            deletion_count=$((deletion_count + 1))
         fi
         
     done < "$TRACKED_ITEMS"
-    
     # Process detected deletions
     if [[ $deletion_count -gt 0 ]]; then
         log_info "Processing $deletion_count auto-detected deletions"
@@ -126,7 +114,6 @@ auto_detect_deletions() {
         while IFS= read -r deleted_item; do
             # Add to tombstone with timestamp
             add_tombstone "$deleted_item"
-            
             # Remove from tracking
             remove_from_tracking "$deleted_item"
             
@@ -148,7 +135,6 @@ auto_detect_deletions() {
 # Generate rsync filter file from ignored.conf and .gitignore files
 generate_rsync_filters() {
     local filter_file="$(mktemp)"
-    
     # Add patterns from ignored.conf
     if [[ -f "$IGNORED_ITEMS" ]]; then
         while IFS= read -r pattern; do
@@ -157,7 +143,6 @@ generate_rsync_filters() {
             echo "- $pattern" >> "$filter_file"
         done < "$IGNORED_ITEMS"
     fi
-    
     # Add .gitignore patterns from tracked directories
     if [[ -f "$TRACKED_ITEMS" ]]; then
         while IFS= read -r item; do
@@ -209,11 +194,11 @@ sync_filesystem_to_repo_rsync() {
     while IFS= read -r item; do
         [[ -z "$item" || "$item" == \#* ]] && continue
         
-        ((sync_count++))
+        sync_count=$((sync_count + 1))
         log_debug "Syncing to repo [$sync_count/$total_sync_items]: $item"
         
         local filesystem_path="$(get_filesystem_path "$item")"
-        local repo_path="$REPO_FILES/$item"
+        local repo_path="$REPO_FILES/$(get_repo_path "$filesystem_path")"
         
         # Skip if filesystem path doesn't exist
         if ! path_exists "$filesystem_path"; then
@@ -225,21 +210,19 @@ sync_filesystem_to_repo_rsync() {
         ensure_dir "$(dirname "$repo_path")"
         
         # Use rsync for intelligent sync
-        local rsync_opts="-av --update --filter=merge $filter_file"
-        
         if [[ -d "$filesystem_path" ]]; then
-            # Directory sync with trailing slashes
-            if rsync $rsync_opts "$filesystem_path/" "$repo_path/" 2>/dev/null; then
+            # Directory sync with trailing slashes  
+            if rsync -av --update --filter="merge $filter_file" "$filesystem_path/" "$repo_path/" 2>/dev/null; then
                 log_debug "Synced directory: $item"
-                ((synced_count++))
+                synced_count=$((synced_count + 1))
             else
                 log_warning "Failed to sync directory: $item"
             fi
         else
             # File sync
-            if rsync $rsync_opts "$filesystem_path" "$repo_path" 2>/dev/null; then
+            if rsync -av --update --filter="merge $filter_file" "$filesystem_path" "$repo_path" 2>/dev/null; then
                 log_debug "Synced file: $item"
-                ((synced_count++))
+                synced_count=$((synced_count + 1))
             else
                 log_warning "Failed to sync file: $item"
             fi
@@ -267,15 +250,14 @@ sync_repo_to_filesystem_rsync() {
     log_info "Syncing repository to filesystem"
     
     local filter_file="$(generate_rsync_filters)"
-    local rsync_opts="-av --filter=merge $filter_file"
     
-    # Add overwrite behavior
+    # Set sync mode
     if [[ "$overwrite" == "true" ]]; then
-        rsync_opts="$rsync_opts --force"
         log_info "Repository-first mode: overwriting filesystem files"
+        local update_flag="--force"
     else
-        rsync_opts="$rsync_opts --update"
         log_info "Update mode: only newer files from repository"
+        local update_flag="--update"
     fi
     
     # Sync each tracked item
@@ -286,7 +268,7 @@ sync_repo_to_filesystem_rsync() {
             [[ -z "$item" || "$item" == \#* ]] && continue
             
             local filesystem_path="$(get_filesystem_path "$item")"
-            local repo_path="$REPO_FILES/$item"
+            local repo_path="$REPO_FILES/$(get_repo_path "$filesystem_path")"
             
             # Skip if not in repo
             [[ ! -e "$repo_path" ]] && continue
@@ -303,15 +285,15 @@ sync_repo_to_filesystem_rsync() {
             # Use rsync for sync
             if [[ -d "$repo_path" ]]; then
                 # Directory sync
-                if rsync $rsync_opts "$repo_path/" "$filesystem_path/" 2>/dev/null; then
+                if rsync -av $update_flag --filter="merge $filter_file" "$repo_path/" "$filesystem_path/" 2>/dev/null; then
                     log_debug "Synced directory from repo: $item"
-                    ((synced_count++))
+                    synced_count=$((synced_count + 1))
                 fi
             else
                 # File sync
-                if rsync $rsync_opts "$repo_path" "$filesystem_path" 2>/dev/null; then
+                if rsync -av $update_flag --filter="merge $filter_file" "$repo_path" "$filesystem_path" 2>/dev/null; then
                     log_debug "Synced file from repo: $item"
-                    ((synced_count++))
+                    synced_count=$((synced_count + 1))
                 fi
             fi
             
@@ -357,7 +339,7 @@ migrate_symlinks_to_files() {
         [[ -z "$item" || "$item" == \#* ]] && continue
         
         local filesystem_path="$(get_filesystem_path "$item")"
-        local repo_path="$REPO_FILES/$item"
+        local repo_path="$REPO_FILES/$(get_repo_path "$filesystem_path")"
         
         # Check if it's a symlink
         if [[ -L "$filesystem_path" ]]; then
@@ -381,7 +363,7 @@ migrate_symlinks_to_files() {
                 continue
             fi
             
-            ((migrated_count++))
+            migrated_count=$((migrated_count + 1))
         fi
         
     done < "$TRACKED_ITEMS"
@@ -420,7 +402,7 @@ enforce_cross_machine_deletions() {
             if path_exists "$filesystem_path"; then
                 log_info "Enforcing cross-machine deletion: $path"
                 rm -rf "$filesystem_path"
-                ((enforced_count++))
+                enforced_count=$((enforced_count + 1))
             fi
         fi
         
@@ -481,7 +463,7 @@ auto_add_new_files_rsync() {
             log_info "Auto-added file: $repo_file_path"
         fi
         
-        ((added_count++))
+        added_count=$((added_count + 1))
         
     done < "$temp_new_files"
     

@@ -163,7 +163,7 @@ cleanup_tombstones() {
             # Active enforcement period
             echo "${path}|${timestamp}" >> "$temp_file"
             enforce_deletion "$path"
-            ((enforced_count++))
+            enforced_count=$((enforced_count + 1))
             
         elif [[ $age -lt $passive_seconds ]]; then
             # Passive protection period
@@ -182,7 +182,7 @@ cleanup_tombstones() {
             else
                 # Safe to remove tombstone
                 log_debug "Cleaned up old tombstone: $path"
-                ((cleaned_count++))
+                cleaned_count=$((cleaned_count + 1))
             fi
         fi
     done < "$DELETED_ITEMS"

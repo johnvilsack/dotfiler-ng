@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 # dotfiler-ng v2.0.0 - Next-generation dotfiles manager using rsync
 # Compatible with bash 3.2+ (macOS default)
-
 set -euo pipefail
+#IFS=$'\n\t'
+#export PS4='+ ${BASH_SOURCE}:${LINENO}:${FUNCNAME[0]}: '
+
+
+#LOGFILE="$GITHUBPATH/dotfiler-ng/sync.log"
+#mkdir -p "$(dirname "$LOGFILE")"
+#exec 3>&1  # Save original stdout
+#exec > >(tee -a "$LOGFILE") 2>&1  # Send stdout/stderr to tee+log
+#set -x
+
 
 # Version
-VERSION="2.0.0"
-PROGRAM_NAME="dotfiler"
+#VERSION="2.0.0"
+#PROGRAM_NAME="dotfiler"
 
 # Determine script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

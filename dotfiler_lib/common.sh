@@ -88,8 +88,10 @@ get_repo_path() {
 # Convert repo path back to filesystem path
 get_filesystem_path() {
     local repo_path="$1"
-    # Replace literal HOME with $HOME
-    if [[ "$repo_path" == "HOME"* ]]; then
+    # Handle $HOME expansion in tracked.conf entries
+    if [[ "$repo_path" == "\$HOME"* ]]; then
+        echo "$HOME${repo_path#\$HOME}"
+    elif [[ "$repo_path" == "HOME"* ]]; then
         echo "$HOME${repo_path#HOME}"
     else
         echo "$repo_path"

@@ -15,11 +15,11 @@ echo "✓ dotfiler installed!"
 echo ""
 
 # Run interactive configuration
-echo "Starting interactive configuration..."
-echo ""
-if [[ -x "$INSTALL_DIR/dotfiler" ]]; then
-    "$INSTALL_DIR/dotfiler" config
-else
-    echo "⚠ Could not run dotfiler config automatically"
-    echo "Please run 'dotfiler config' to complete setup"
-fi
+# echo "Starting interactive configuration..."
+# echo ""
+# if [[ -x "$INSTALL_DIR/dotfiler" ]]; then
+#     "$INSTALL_DIR/dotfiler" config
+# else
+#     echo "⚠ Could not run dotfiler config automatically"
+#     echo "Please run 'dotfiler config' to complete setup"
+# fi
