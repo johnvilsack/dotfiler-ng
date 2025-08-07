@@ -22,6 +22,26 @@ SHARED_TEST_DIR="/Users/Shared/TEST"
 REPO_HOME_DIR="$HOME/github/dotfiles/mac/files/HOME"
 REPO_SHARED_DIR="$HOME/github/dotfiles/mac/files/Users/Shared"
 
+function backupconfigs() {
+    mkdir -p .config/.trueconfig
+    # Backup current real config into backup dir
+    rsync -a --delete "$HOME/.config/dotfiler/" ".config/.trueconfig/"
+    
+    # Overwrite real config with test config
+    rsync -a --delete ".config/dotfiler/" "$HOME/.config/dotfiler/"
+}
+
+function restoreconfigs() {
+    # Restore real config from backup
+    rsync -a --delete ".config/.trueconfig/" "$HOME/.config/dotfiler/"
+    mkdir -p .config/.testconfig
+    rsync -a --delete ".config/dotfiler/" ".config/.testconfig/"
+    rsync -a --delete ".config/.trueconfig/" ".config/dotfiler/"
+    rm -rf .config/.trueconfig
+}
+
+
+
 log_test() {
     echo -e "${BLUE}[TEST]${NC} $*"
 }
@@ -524,5 +544,7 @@ run_all_tests() {
 
 # Run tests if script is executed directly
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    backupconfigs
     run_all_tests
+    restoreconfigs
 fi

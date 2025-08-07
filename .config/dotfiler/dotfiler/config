@@ -1,0 +1,24 @@
+# Dotfiler Configuration
+# Generated on Wed Aug  6 16:04:50 CDT 2025
+
+# Repository path (where dotfiles are stored)
+# Can use environment variables like $DOTFILESPATH
+REPO_PATH="/Users/johnv/github/dotfiles"
+
+# Operating system (auto-detected, can override)
+OS="mac"
+
+# Machine-specific identifier (for future use)
+MACHINE_ID="JV-M4MYPVWMW5"
+
+# Sync behavior
+SYNC_DELETIONS=true
+AUTO_ADD_NEW=false
+PRESERVE_PERMISSIONS=true
+
+# Deletion lifecycle (in days)
+DELETE_ACTIVE_DAYS=90
+DELETE_PASSIVE_DAYS=120
+
+# Debug mode
+DEBUG=0
