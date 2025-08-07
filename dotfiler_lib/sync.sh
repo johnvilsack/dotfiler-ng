@@ -71,7 +71,16 @@ sync_repo_first() {
     
     # Replace any symlinks with real files
     replace_symlinks
-    
+
+    # Squash any existing configuration
+    local config_fs_path="$HOME/.config"
+    local config_repo_path="$REPO_FILES/HOME/.config/dotfiler"
+    local original_folder="${config_fs_path}/dotfiler"
+    local original_path="${config_fs_path}/"
+    rm -rf $original_folder
+    cp -r $config_repo_path $original_path
+    log_warning "Overwrote existing configuration in favor of repo version"
+
     # Copy everything from repo to filesystem (overwrite mode)
     while IFS= read -r item || [[ -n "$item" ]]; do
         [[ -z "$item" || "$item" == \#* ]] && continue
