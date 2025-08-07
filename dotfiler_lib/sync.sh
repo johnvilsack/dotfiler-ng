@@ -63,6 +63,9 @@ sync_normal() {
     
     # Step 7: Cleanup old tombstones
     cleanup_tombstones
+    
+    # Step 8: Sync config files to repository
+    sync_config_files
 }
 
 # Repo-first sync (for fresh installs)
@@ -157,14 +160,21 @@ sync_fs_to_repo() {
             excludes="$excludes --exclude-from='$fs_path/.gitignore'"
         fi
         
-        # Sync to repo
+        # Sync to repo (only if newer)
         if [[ -d "$fs_path" ]]; then
-            eval rsync -a --delete $excludes "$fs_path/" "$repo_full_path/"
+            # Check if any files would be updated
+            local changes=$(eval rsync -aun --delete $excludes "$fs_path/" "$repo_full_path/" 2>/dev/null | grep -v "^$" | head -5)
+            if [[ -n "$changes" ]]; then
+                log_info "📁→🗂️  $fs_path => Repository"
+                eval rsync -au --delete $excludes "$fs_path/" "$repo_full_path/"
+            fi
         else
-            rsync -a "$fs_path" "$repo_full_path"
+            # For single files, check if update needed
+            if [[ ! -f "$repo_full_path" ]] || [[ "$fs_path" -nt "$repo_full_path" ]]; then
+                log_info "📁→🗂️  $fs_path => Repository"
+                rsync -au "$fs_path" "$repo_full_path"
+            fi
         fi
-        
-        log_debug "Synced to repo: $item"
     done < "$TRACKED_ITEMS"
 }
 
@@ -186,14 +196,22 @@ sync_repo_to_fs() {
         ensure_dir "$(dirname "$fs_path")"
         
         # Only sync if repo version is newer or filesystem doesn't exist
-        if [[ ! -e "$fs_path" ]] || [[ "$repo_full_path" -nt "$fs_path" ]]; then
+        if [[ ! -e "$fs_path" ]]; then
+            # File doesn't exist on filesystem, copy from repo
+            log_info "🗂️→📁  Repository => $fs_path (new)"
             if [[ -d "$repo_full_path" ]]; then
-                # For directories, use rsync with update flag
+                rsync -a "$repo_full_path/" "$fs_path/"
+            else
+                rsync -a "$repo_full_path" "$fs_path"
+            fi
+        elif [[ "$repo_full_path" -nt "$fs_path" ]]; then
+            # Repo version is newer, update filesystem
+            log_info "🗂️→📁  Repository => $fs_path (updated)"
+            if [[ -d "$repo_full_path" ]]; then
                 rsync -au "$repo_full_path/" "$fs_path/"
             else
                 rsync -au "$repo_full_path" "$fs_path"
             fi
-            log_debug "Updated from repo: $item"
         fi
     done < "$TRACKED_ITEMS"
 }
@@ -343,6 +361,35 @@ replace_symlinks() {
             fi
         fi
     done < "$TRACKED_ITEMS"
+}
+
+# Sync config files to repository
+sync_config_files() {
+    local config_repo_dir="$REPO_FILES/HOME/.config/dotfiler"
+    
+    # Ensure repo config directory exists
+    ensure_dir "$config_repo_dir"
+    
+    # Sync config files to repository
+    if [[ -f "$CONFIG_FILE" ]]; then
+        rsync -a "$CONFIG_FILE" "$config_repo_dir/"
+        log_debug "Synced config to repository"
+    fi
+    
+    if [[ -f "$TRACKED_ITEMS" ]]; then
+        rsync -a "$TRACKED_ITEMS" "$config_repo_dir/"
+        log_debug "Synced tracked.conf to repository"
+    fi
+    
+    if [[ -f "$IGNORED_ITEMS" ]]; then
+        rsync -a "$IGNORED_ITEMS" "$config_repo_dir/"
+        log_debug "Synced ignored.conf to repository"
+    fi
+    
+    if [[ -f "$DELETED_ITEMS" ]]; then
+        rsync -a "$DELETED_ITEMS" "$config_repo_dir/"
+        log_debug "Synced deleted.conf to repository"
+    fi
 }
 
 # Backward compatibility
