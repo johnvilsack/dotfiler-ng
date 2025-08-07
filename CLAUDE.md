@@ -1,4 +1,4 @@
-! Important notice: Since the creation of the POST-COMPACT-PLAN.md, I have learned that rsync does not expand variables. This means that files and folders located in the HOME directory should be sourced with ~ versus $HOME. This may have been the cause of many problems.
+! Important notice: Since the creation of the POST-COMPACT-PLAN.md, I have learned that rsync does not expand variables. config files should use $HOME to reflect dynamic pathing, but it should be normalized the current real path before presenting values to rsync.
 
 ## dotfiler-ng Using rsync Behavior and Logic (Simplified)
 
