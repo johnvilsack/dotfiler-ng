@@ -21,8 +21,11 @@ normalize_path() {
         path="${HOME}${path#\~}"
     fi
     
-    # Expand environment variables
-    path="$(eval echo "$path")"
+    # Expand environment variables (safely)
+    if [[ "$path" == *'$'* ]]; then
+        # Only use eval if path contains variables, and escape safely
+        path="$(eval "echo \"$path\"")"
+    fi
     
     # Make absolute if relative
     if [[ "$path" != /* ]]; then

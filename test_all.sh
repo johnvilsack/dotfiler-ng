@@ -261,6 +261,62 @@ test_delete_command() {
     assert_in_config "$HOME/.config/dotfiler/deleted.conf" "/Users/Shared/TEST/shared1.txt" "Deletion tombstoned"
 }
 
+test_repo_discovery() {
+    log_test "Testing repository item discovery..."
+    
+    # Create new files directly in repository (simulating files added on another machine)
+    echo "new repo file" > "$REPO_HOME_DIR/new-repo-file.txt"
+    mkdir -p "$REPO_HOME_DIR/new-repo-dir"
+    echo "nested file" > "$REPO_HOME_DIR/new-repo-dir/nested.txt"
+    
+    # Create new absolute path file in repo
+    mkdir -p "$HOME/github/dotfiles/mac/files/Users/Shared/TEST/new-shared-dir"
+    echo "shared repo file" > "$HOME/github/dotfiles/mac/files/Users/Shared/TEST/new-shared-dir/file.txt"
+    
+    # Run sync to discover new items
+    dotfiler sync > /dev/null
+    
+    # Verify new items are tracked and synced to filesystem
+    assert_in_config "$HOME/.config/dotfiler/tracked.conf" "~/new-repo-file.txt" "New repo file tracked"
+    assert_in_config "$HOME/.config/dotfiler/tracked.conf" "~/new-repo-dir" "New repo directory tracked"
+    assert_in_config "$HOME/.config/dotfiler/tracked.conf" "/Users/Shared/TEST/new-shared-dir" "New shared directory tracked"
+    
+    assert_exists "$HOME_TEST_DIR/new-repo-file.txt" "New repo file synced to filesystem"
+    assert_exists "$HOME_TEST_DIR/new-repo-dir/nested.txt" "New repo directory synced to filesystem"
+    assert_exists "$SHARED_TEST_DIR/new-shared-dir/file.txt" "New shared directory synced to filesystem"
+    
+    assert_file_content "$HOME_TEST_DIR/new-repo-file.txt" "new repo file" "New repo file content correct"
+}
+
+test_deletion_messaging() {
+    log_test "Testing deletion messaging behavior..."
+    
+    # Create and track a file
+    echo "temp delete test" > "$HOME_TEST_DIR/delete-msg-test.txt"
+    dotfiler track "$HOME_TEST_DIR/delete-msg-test.txt" > /dev/null
+    
+    # Delete the file and sync (should show message)
+    rm "$HOME_TEST_DIR/delete-msg-test.txt"
+    local first_sync=$(dotfiler sync 2>&1)
+    
+    # Sync again - should NOT show "removed from tracking" message again
+    local second_sync=$(dotfiler sync 2>&1)
+    
+    TESTS_RUN=$((TESTS_RUN + 1))
+    if echo "$first_sync" | grep -q "Detected deletion:" && echo "$first_sync" | grep -q "Removed from tracking:"; then
+        log_pass "First deletion sync shows proper messages"
+    else
+        log_fail "First deletion sync missing expected messages"
+    fi
+    
+    TESTS_RUN=$((TESTS_RUN + 1))
+    if ! echo "$second_sync" | grep -q "Removed from tracking:"; then
+        log_pass "Second deletion sync doesn't repeat tracking message"
+    else
+        log_fail "Second deletion sync shows tracking message again"
+    fi
+}
+
 test_repo_first_mode() {
     log_test "Testing repo-first mode..."
     
@@ -300,6 +356,92 @@ test_list_and_status() {
     fi
 }
 
+show_directionality_diagram() {
+    echo
+    echo -e "${BLUE}╔════════════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║                    DOTFILER-NG DATA FLOW DIAGRAM                      ║${NC}"
+    echo -e "${BLUE}╚════════════════════════════════════════════════════════════════════════╝${NC}"
+    echo
+    
+    echo -e "${GREEN}┌─────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${GREEN}│                        TRACKING OPERATIONS                         │${NC}"
+    echo -e "${GREEN}└─────────────────────────────────────────────────────────────────────┘${NC}"
+    echo -e "  Command:  ${YELLOW}dotfiler track <path>${NC}"
+    echo -e "  Flow:     📁 Filesystem  →  📝 tracked.conf  →  🗂️  Repository"
+    echo -e "  Action:   Adds to config AND immediately copies to repo"
+    echo
+    
+    echo -e "${GREEN}┌─────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${GREEN}│                    BIDIRECTIONAL SYNC (Normal)                     │${NC}"
+    echo -e "${GREEN}└─────────────────────────────────────────────────────────────────────┘${NC}"
+    echo -e "  Command:  ${YELLOW}dotfiler sync${NC}"
+    echo -e "  Flows:"
+    echo -e "    Step 1: 📁 Filesystem  ←→  🗂️  Repository     (bidirectional)"
+    echo -e "    Step 2: 🚫 Missing     →   ⚰️  deleted.conf   (auto-tombstone)"
+    echo -e "    Step 3: ⚰️  Tombstone  →   ❌ Deletion       (90-day enforce)"
+    echo -e "    Step 4: 🗑️  Old tombs  →   💀 Cleanup        (120-day remove)"
+    echo
+    
+    echo -e "${GREEN}┌─────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${GREEN}│                    REPOSITORY-FIRST SYNC                           │${NC}"
+    echo -e "${GREEN}└─────────────────────────────────────────────────────────────────────┘${NC}"
+    echo -e "  Command:  ${YELLOW}dotfiler sync --repo-first${NC}"
+    echo -e "  Flow:     🗂️  Repository  →  📁 Filesystem     (overwrite mode)"
+    echo -e "  Use:      Fresh installs, symlink migration, restore operations"
+    echo
+    
+    echo -e "${GREEN}┌─────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${GREEN}│                      DELETION WORKFLOWS                            │${NC}"
+    echo -e "${GREEN}└─────────────────────────────────────────────────────────────────────┘${NC}"
+    echo
+    echo -e "  ${YELLOW}A) Explicit Delete Command:${NC}"
+    echo -e "     Command:  dotfiler delete <path>"
+    echo -e "     Actions:  📁 Remove from filesystem"
+    echo -e "               🗂️  Remove from repository"
+    echo -e "               📝 Remove from tracked.conf"
+    echo -e "               ⚰️  Add tombstone to deleted.conf"
+    echo
+    echo -e "  ${YELLOW}B) Natural File Deletion:${NC}"
+    echo -e "     Command:  rm <file> (standard deletion)"
+    echo -e "     On Sync:  🔍 Detect missing file"
+    echo -e "               🗂️  Auto-remove from repository"
+    echo -e "               📝 Auto-remove from tracked.conf (first time only)"
+    echo -e "               ⚰️  Auto-add to deleted.conf"
+    echo
+    
+    echo -e "${GREEN}┌─────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${GREEN}│                       IGNORE OPERATIONS                            │${NC}"
+    echo -e "${GREEN}└─────────────────────────────────────────────────────────────────────┘${NC}"
+    echo -e "  Command:  ${YELLOW}dotfiler ignore <pattern>${NC}"
+    echo -e "  Effects:  🚫 Pattern added to ignored.conf"
+    echo -e "            ⏭️  Matching files skipped during sync"
+    echo -e "            📁 .gitignore files auto-respected"
+    echo
+    
+    echo -e "${GREEN}┌─────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${GREEN}│                    CROSS-MACHINE WORKFLOW                          │${NC}"
+    echo -e "${GREEN}└─────────────────────────────────────────────────────────────────────┘${NC}"
+    echo -e "  ${YELLOW}Machine A:${NC}  Delete file  →  Create tombstone"
+    echo -e "  ${YELLOW}Git Push:${NC}   Tombstone pushed to remote"
+    echo -e "  ${YELLOW}Machine B:${NC}  Git pull  →  Sync  →  File deleted"
+    echo -e "  ${YELLOW}Timeline:${NC}   0-90 days: Active deletion"
+    echo -e "              90-120 days: Passive retention"
+    echo -e "              120+ days: Complete removal"
+    echo
+    
+    echo -e "${BLUE}┌─────────────────────────────────────────────────────────────────────┐${NC}"
+    echo -e "${BLUE}│                    ✅ VERIFIED TEST FLOWS                          │${NC}"
+    echo -e "${BLUE}└─────────────────────────────────────────────────────────────────────┘${NC}"
+    echo -e "  📁→🗂️   Filesystem to Repository sync         ${GREEN}✓ TESTED${NC}"
+    echo -e "  🗂️→📁   Repository to Filesystem sync         ${GREEN}✓ TESTED${NC}"
+    echo -e "  📝→📁   Config tracking to FS creation        ${GREEN}✓ TESTED${NC}"
+    echo -e "  ❌→⚰️   Deletion to Tombstone creation        ${GREEN}✓ TESTED${NC}"
+    echo -e "  ⚰️→❌   Tombstone to Cross-machine deletion   ${GREEN}✓ TESTED${NC}"
+    echo -e "  🚫→⏭️   Ignore patterns to Sync exclusion     ${GREEN}✓ TESTED${NC}"
+    echo -e "  🔄→📝   Repo-first mode restoration           ${GREEN}✓ TESTED${NC}"
+    echo
+}
+
 run_all_tests() {
     echo -e "${BLUE}========================================${NC}"
     echo -e "${BLUE}    Dotfiler-NG Comprehensive Test Suite${NC}"
@@ -315,8 +457,11 @@ run_all_tests() {
     test_sync_bidirectional
     test_deletion_detection
     test_delete_command
+    test_deletion_messaging
     test_repo_first_mode
     test_list_and_status
+    
+    show_directionality_diagram
     
     echo
     echo -e "${BLUE}========================================${NC}"

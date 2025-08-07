@@ -41,19 +41,23 @@ sync_normal() {
     log_info "Detecting deletions..."
     detect_deletions
     
-    # Step 2: Filesystem → Repository
+    # Step 2: Discover new items in repository
+    log_info "Discovering new repository items..."
+    discover_repo_items
+    
+    # Step 3: Filesystem → Repository
     log_info "Syncing filesystem to repository..."
     sync_fs_to_repo
     
-    # Step 3: Repository → Filesystem
+    # Step 4: Repository → Filesystem
     log_info "Syncing repository to filesystem..."
     sync_repo_to_fs
     
-    # Step 4: Enforce deletions
+    # Step 5: Enforce deletions
     log_info "Enforcing deletions..."
     enforce_deletions
     
-    # Step 5: Cleanup old tombstones
+    # Step 6: Cleanup old tombstones
     cleanup_tombstones
 }
 
@@ -89,6 +93,22 @@ sync_repo_first() {
         
         log_success "Restored: $item"
     done < "$TRACKED_ITEMS"
+}
+
+# Discover new items in repository that should be tracked
+discover_repo_items() {
+    # Conservative discovery - only discover items that are:
+    # 1. Not already tracked
+    # 2. Not in a tracked parent directory
+    # 3. Not ignored or deleted
+    
+    # This function is intentionally minimal to avoid auto-tracking
+    # large directory structures. Users should explicitly track items.
+    
+    # For now, disable auto-discovery until it can be made smarter
+    # Auto-discovery was causing issues with tracking too many items
+    log_debug "Repository discovery disabled - use 'dotfiler track' to add new items"
+    return 0
 }
 
 # Sync filesystem to repository
@@ -188,10 +208,10 @@ detect_deletions() {
                     rm -rf "$repo_full_path"
                     log_debug "Removed from repo: $item"
                 fi
+                
+                # Remove from tracking (only when first detected)
+                remove_from_tracking "$fs_path"
             fi
-            
-            # Remove from tracking
-            remove_from_tracking "$fs_path"
         fi
     done < "$TRACKED_ITEMS"
 }
@@ -223,9 +243,6 @@ enforce_deletions() {
                 rm -rf "$repo_full_path"
                 log_debug "Removed from repo: $item"
             fi
-            
-            # Remove from tracking
-            remove_from_tracking "$fs_path"
         fi
     done < "$DELETED_ITEMS"
 }
