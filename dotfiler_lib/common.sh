@@ -1,143 +1,129 @@
 #!/usr/bin/env bash
-# common.sh - Common utilities and functions
+# common.sh - Core functions for dotfiler-ng
 # Compatible with bash 3.2+ (macOS default)
+# Simple, robust, minimal
 
-# Color codes for output
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[1;33m'
-readonly BLUE='\033[0;34m'
-readonly MAGENTA='\033[0;35m'
-readonly CYAN='\033[0;36m'
-readonly WHITE='\033[1;37m'
-readonly NC='\033[0m' # No Color
-
-# Logging functions
-log_info() {
-    echo -e "${CYAN}[INFO]${NC} $*"
-}
-
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $*"
-}
-
-log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $*"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $*" >&2
-}
-
-log_debug() {
-    if [[ "${DEBUG:-0}" == "1" ]]; then
-        echo -e "${MAGENTA}[DEBUG]${NC} $*" >&2
-    fi
-}
-
-# Prompt for confirmation
-confirm() {
-    local prompt="${1:-Continue?}"
-    local response
-    
-    echo -n "$prompt (y/N): "
-    read -r response
-    
-    case "$response" in
-        [yY][eE][sS]|[yY])
-            return 0
-            ;;
-        *)
-            return 1
-            ;;
+# Get OS type
+get_os() {
+    case "$(uname -s)" in
+        Darwin*) echo "mac" ;;
+        Linux*)  echo "linux" ;;
+        *)       echo "$(uname -s | tr '[:upper:]' '[:lower:]')" ;;
     esac
 }
 
-# Expand path with environment variables
-expand_path() {
-    local path="$1"
-    # Expand ~ and environment variables
-    eval echo "$path"
-}
-
-# Normalize path (remove trailing slash, expand variables)
+# Normalize path (expand ~, resolve .., make absolute)
 normalize_path() {
     local path="$1"
-    path="$(expand_path "$path")"
-    # Remove trailing slash unless it's root
-    if [[ "$path" != "/" ]]; then
-        path="${path%/}"
+    
+    # Replace ~ with $HOME for expansion
+    if [[ "$path" == "~"* ]]; then
+        path="${HOME}${path#\~}"
     fi
-    echo "$path"
+    
+    # Expand environment variables
+    path="$(eval echo "$path")"
+    
+    # Make absolute if relative
+    if [[ "$path" != /* ]]; then
+        path="$(pwd)/$path"
+    fi
+    
+    # Use realpath if available, otherwise use pwd -P
+    if command -v realpath >/dev/null 2>&1; then
+        realpath "$path" 2>/dev/null || echo "$path"
+    else
+        echo "$(cd "$(dirname "$path")" 2>/dev/null && pwd -P)/$(basename "$path")"
+    fi
 }
 
-# Get relative path for repo storage
-get_repo_path() {
+# Convert filesystem path to config format (with ~ for HOME paths)
+to_config_path() {
     local path="$1"
     local normalized="$(normalize_path "$path")"
     
-    # If path starts with $HOME, store with $HOME variable for portability
+    # If path starts with HOME, replace with ~
     if [[ "$normalized" == "$HOME"* ]]; then
-        echo "\$HOME${normalized#$HOME}"
+        echo "~${normalized#$HOME}"
     else
-        # Store absolute paths as-is
         echo "$normalized"
     fi
 }
 
-# Convert repo path back to filesystem path  
-get_filesystem_path() {
-    local repo_path="$1"
-    # Handle $HOME expansion in tracked.conf entries
-    if [[ "$repo_path" == "\$HOME"* ]]; then
-        echo "$HOME${repo_path#\$HOME}"
-    elif [[ "$repo_path" == "HOME"* ]]; then
-        echo "$HOME${repo_path#HOME}"
+# Convert config path to repo storage path
+to_repo_path() {
+    local path="$1"
+    
+    # Expand ~ to HOME for repo storage
+    if [[ "$path" == "~"* ]]; then
+        echo "HOME${path#\~}"
     else
-        echo "$repo_path"
+        # Absolute paths stored as-is (minus leading /)
+        echo "${path#/}"
     fi
 }
 
-# Get the actual file path in repository (converts $HOME to literal HOME)
-get_repo_file_path() {
-    local repo_path="$1"
-    # Convert $HOME to literal HOME for file storage
-    if [[ "$repo_path" == "\$HOME"* ]]; then
-        echo "HOME${repo_path#\$HOME}"
+# Convert config path to filesystem path
+to_filesystem_path() {
+    local path="$1"
+    
+    # Replace ~ with actual HOME
+    if [[ "$path" == "~"* ]]; then
+        echo "${HOME}${path#\~}"
     else
-        echo "$repo_path"
+        echo "$path"
     fi
+}
+
+# Logging functions
+log_info() {
+    echo "[INFO] $*" >&2
+}
+
+log_success() {
+    echo "[SUCCESS] $*" >&2
+}
+
+log_warning() {
+    echo "[WARNING] $*" >&2
+}
+
+log_error() {
+    echo "[ERROR] $*" >&2
+}
+
+log_debug() {
+    [[ "${DEBUG:-0}" == "1" ]] && echo "[DEBUG] $*" >&2
+}
+
+# Ensure directory exists
+ensure_dir() {
+    local dir="$1"
+    [[ -d "$dir" ]] || mkdir -p "$dir"
 }
 
 # Check if path is ignored
 is_ignored() {
     local path="$1"
-    local pattern
     
-    # Check ignored.conf
-    if [[ -f "$IGNORED_ITEMS" ]]; then
-        while IFS= read -r pattern || [[ -n "$pattern" ]]; do
-            [[ -z "$pattern" || "$pattern" == \#* ]] && continue
-            
-            # Check if path matches pattern
-            if [[ "$path" == $pattern ]]; then
-                return 0
-            fi
-        done < "$IGNORED_ITEMS"
-    fi
+    [[ ! -f "$IGNORED_ITEMS" ]] && return 1
     
-    # Check .gitignore files in path hierarchy
-    local check_path="$path"
-    while [[ "$check_path" != "/" && "$check_path" != "." ]]; do
-        local gitignore="$(dirname "$check_path")/.gitignore"
-        if [[ -f "$gitignore" ]]; then
-            local basename="$(basename "$path")"
-            if grep -q "^$basename$" "$gitignore" 2>/dev/null; then
-                return 0
-            fi
+    while IFS= read -r pattern || [[ -n "$pattern" ]]; do
+        [[ -z "$pattern" || "$pattern" == \#* ]] && continue
+        
+        # Convert pattern to filesystem path for comparison
+        local fs_pattern="$(to_filesystem_path "$pattern")"
+        
+        # Check exact match or prefix match for directories
+        if [[ "$path" == "$fs_pattern" ]] || [[ "$path" == "$fs_pattern"/* ]]; then
+            return 0
         fi
-        check_path="$(dirname "$check_path")"
-    done
+        
+        # Check glob patterns
+        if [[ "$path" == $fs_pattern ]]; then
+            return 0
+        fi
+    done < "$IGNORED_ITEMS"
     
     return 1
 }
@@ -145,56 +131,55 @@ is_ignored() {
 # Check if path is tracked
 is_tracked() {
     local path="$1"
-    local normalized="$(get_repo_path "$path")"
+    local config_path="$(to_config_path "$path")"
+    
+    [[ ! -f "$TRACKED_ITEMS" ]] && return 1
+    
+    while IFS= read -r tracked || [[ -n "$tracked" ]]; do
+        [[ -z "$tracked" || "$tracked" == \#* ]] && continue
+        
+        # Check exact match
+        if [[ "$config_path" == "$tracked" ]]; then
+            return 0
+        fi
+        
+        # Check if path is under a tracked directory
+        if [[ "$config_path" == "$tracked"/* ]]; then
+            return 0
+        fi
+    done < "$TRACKED_ITEMS"
+    
+    return 1
+}
+
+# Add path to tracking
+add_to_tracking() {
+    local path="$1"
+    local config_path="$(to_config_path "$path")"
+    
+    # Check if already tracked
+    if is_tracked "$path"; then
+        log_info "Already tracked: $config_path"
+        return 0
+    fi
+    
+    # Add to tracked.conf
+    echo "$config_path" >> "$TRACKED_ITEMS"
+    
+    # Sort and dedupe
+    sort -u "$TRACKED_ITEMS" -o "$TRACKED_ITEMS"
+    
+    log_success "Added to tracking: $config_path"
+}
+
+# Remove path from tracking
+remove_from_tracking() {
+    local path="$1"
+    local config_path="$(to_config_path "$path")"
     
     if [[ -f "$TRACKED_ITEMS" ]]; then
-        grep -q "^${normalized}$" "$TRACKED_ITEMS" 2>/dev/null
-    else
-        return 1
+        grep -v "^${config_path}$" "$TRACKED_ITEMS" > "$TRACKED_ITEMS.tmp" || true
+        mv "$TRACKED_ITEMS.tmp" "$TRACKED_ITEMS"
+        log_info "Removed from tracking: $config_path"
     fi
-}
-
-# Check if path exists (handles both files and symlinks)
-path_exists() {
-    local path="$1"
-    [[ -e "$path" ]] || [[ -L "$path" ]]
-}
-
-# Ensure directory exists
-ensure_dir() {
-    local dir="$1"
-    if [[ ! -d "$dir" ]]; then
-        log_debug "Creating directory: $dir"
-        mkdir -p "$dir"
-    fi
-}
-
-# Safe copy with backup
-safe_copy() {
-    local source="$1"
-    local dest="$2"
-    
-    if [[ -e "$dest" ]]; then
-        # Create backup
-        local backup="${dest}.backup.$(date +%Y%m%d_%H%M%S)"
-        log_debug "Backing up existing file: $dest → $backup"
-        cp -a "$dest" "$backup"
-    fi
-    
-    cp -a "$source" "$dest"
-}
-
-# Get OS type
-get_os() {
-    case "$(uname -s)" in
-        Darwin*)
-            echo "mac"
-            ;;
-        Linux*)
-            echo "linux"
-            ;;
-        *)
-            echo "unknown"
-            ;;
-    esac
 }

@@ -10,6 +10,7 @@ echo "Installing dotfiler to $INSTALL_DIR..."
 # Copy files
 cp dotfiler "$INSTALL_DIR/" && cp -rf dotfiler_lib "$INSTALL_DIR/"
 chmod +x "$INSTALL_DIR/dotfiler"
+rsync -av ".config/dotfiler/" "$HOME/.config/dotfiler/"
 
 echo "✓ dotfiler installed!"
 echo ""

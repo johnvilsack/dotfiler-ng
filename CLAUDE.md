@@ -1,3 +1,5 @@
+! Important notice: Since the creation of the POST-COMPACT-PLAN.md, I have learned that rsync does not expand variables. This means that files and folders located in the HOME directory should be sourced with ~ versus $HOME. This may have been the cause of many problems.
+
 ## dotfiler-ng Using rsync Behavior and Logic (Simplified)
 
 Wrapper application for rsync that adds persistent tracking of files and folders, ignoring of subfiles and subfolders when tracking whole folders, tracking the deletion of objects and tombstoning them for cross device synchronization. Leverage rsync as much as possible, building highly performant and minimalistic functions in bash to support the process. 
@@ -5,12 +7,12 @@ Wrapper application for rsync that adds persistent tracking of files and folders
 ### 1. Required Files
 
 * `config` – general settings (paths)
-  * DefaultRepo = $DOTFILESPATH (equal to /Users/johnv/github/dotfiles)
-  * RepoFilesLocation = <DefaultRepo>/$OS/files
-  * RepoHOMEDirectory = <DefaultRepo>/$OS/files/HOME
-  * Any path outside HOME = <DefaultRepo>/$OS/files/<fullpath> 
+  * DefaultRepo = $DOTFILESPATH (equal to ~/github/dotfiles)
+  * RepoFilesLocation = <DefaultRepo>/mac/files
+  * RepoHOMEDirectory = <DefaultRepo>/mac/files/HOME
+  * Any path outside HOME = <DefaultRepo>/mac/files/<fullpath> 
 * `tracked.conf` – list of tracked files/folders
-* `ignored.conf` – ignore patterns (manual + .gitignore)
+* `ignored.conf` – ignore patterns
 * `deleted.conf` – tombstones with timestamps
 * Location of configs - $HOME/.config/dotfiler/
 * NOTE: All files and functions working with entries MUST be capable of supporting envvar paths.

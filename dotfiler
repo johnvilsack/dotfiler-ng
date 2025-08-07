@@ -1,137 +1,103 @@
 #!/usr/bin/env bash
-# dotfiler-ng v2.0.0 - Next-generation dotfiles manager using rsync
+# dotfiler-ng - Simple dotfiles management with rsync
 # Compatible with bash 3.2+ (macOS default)
-set -euo pipefail
-#IFS=$'\n\t'
-#export PS4='+ ${BASH_SOURCE}:${LINENO}:${FUNCNAME[0]}: '
 
+# Program info
+PROGRAM_NAME="dotfiler"
+VERSION="5.0.0"
 
-#LOGFILE="$GITHUBPATH/dotfiler-ng/sync.log"
-#mkdir -p "$(dirname "$LOGFILE")"
-#exec 3>&1  # Save original stdout
-#exec > >(tee -a "$LOGFILE") 2>&1  # Send stdout/stderr to tee+log
-#set -x
-
-
-# Version
-#VERSION="2.0.0"
-#PROGRAM_NAME="dotfiler"
-
-# Determine script directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIB_DIR="$SCRIPT_DIR/dotfiler_lib"
+# Find library directory
+if [[ -L "$0" ]]; then
+    # Follow symlink
+    SCRIPT_PATH="$(readlink "$0")"
+    LIB_DIR="$(dirname "$SCRIPT_PATH")/dotfiler_lib"
+else
+    # Direct execution
+    SCRIPT_PATH="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+    LIB_DIR="$(dirname "$SCRIPT_PATH")/dotfiler_lib"
+fi
 
 # Source library files
 source "$LIB_DIR/common.sh"
 source "$LIB_DIR/config.sh"
-source "$LIB_DIR/add.sh"
+source "$LIB_DIR/track.sh"
 source "$LIB_DIR/ignore.sh"
-source "$LIB_DIR/remove.sh"
-source "$LIB_DIR/list.sh"
-source "$LIB_DIR/sync.sh"
 source "$LIB_DIR/delete.sh"
-source "$LIB_DIR/init.sh"
+source "$LIB_DIR/sync.sh"
+source "$LIB_DIR/list.sh"
+source "$LIB_DIR/status.sh"
 
-# Help function
+# Initialize configuration
+init_config
+
+# Show help
 show_help() {
     cat << EOF
-$PROGRAM_NAME v$VERSION - Dotfiles management with rsync
+dotfiler-ng v$VERSION - Simple dotfiles management with rsync
 
-USAGE:
-    $PROGRAM_NAME <command> [options]
+Usage: $PROGRAM_NAME <command> [arguments]
 
-COMMANDS:
-    add <path>        Add a file or directory to tracking
-    remove <path>     Remove a file or directory from tracking
-    ignore <pattern>  Add a pattern to ignore list  
-    delete <path>     Delete and tombstone a file/directory
-    sync [options]    Sync dotfiles using rsync
-        --repo-first  Fresh install mode (repo overwrites filesystem)
-    build [options]   Alias for sync (backward compatibility)
-        --repo-first  Fresh install mode (repo overwrites filesystem)
-    config            Interactive configuration and setup
-    init              Alias for config
-    list              List all tracked items
-    status            Show sync status and changes
-    version           Show version information
-    help              Show this help message
+Commands:
+  track <path>        Add file/directory to tracking (alias: add)
+  ignore <pattern>    Add pattern to ignore list
+  delete <path>       Delete and tombstone a tracked item
+  remove <path>       Remove from tracking without deletion
+  sync                Sync tracked items between filesystem and repository
+  sync --repo-first   Fresh install mode - repository overwrites filesystem
+  list                List all tracked items
+  status              Show configuration and sync status
+  help                Show this help message
 
-EXAMPLES:
-    $PROGRAM_NAME config           # Interactive setup
-    $PROGRAM_NAME add ~/.zshrc
-    $PROGRAM_NAME add ~/.config/nvim  
-    $PROGRAM_NAME ignore "*.log"
-    $PROGRAM_NAME sync
-    $PROGRAM_NAME sync --repo-first
+Configuration:
+  Config files are stored in: ~/.config/dotfiler/
+  Repository path: ${REPO_PATH:-\$DOTFILESPATH or ~/github/dotfiles}
 
-CONFIG:
-    Configuration stored in: ~/.config/dotfiler/
-    Repository location: Configured during install
+Examples:
+  $PROGRAM_NAME track ~/.zshrc
+  $PROGRAM_NAME track ~/.config/nvim
+  $PROGRAM_NAME ignore "*.log"
+  $PROGRAM_NAME sync
+  $PROGRAM_NAME delete ~/.config/old-app
 
-For more information: https://github.com/johnvilsack/dotfiler-ng
 EOF
 }
 
-# Main CLI router
+# Main command dispatcher
 main() {
-    # Handle config/init commands before initializing config
-    if [[ "${1:-}" == "config" || "${1:-}" == "init" ]]; then
-        shift
-        cmd_config "$@"
-        exit 0
-    fi
+    local cmd="${1:-}"
+    shift || true
     
-    # Initialize configuration for other commands
-    init_config
-    
-    # Handle no arguments
-    if [[ $# -eq 0 ]]; then
-        show_help
-        exit 0
-    fi
-    
-    # Parse command
-    case "${1:-}" in
-        "add")
-            shift
-            cmd_add "$@"
+    case "$cmd" in
+        track|add)
+            cmd_track "$@"
             ;;
-        "remove")
-            shift
-            cmd_remove "$@"
-            ;;
-        "ignore")
-            shift
+        ignore)
             cmd_ignore "$@"
             ;;
-        "delete")
-            shift
+        delete)
             cmd_delete "$@"
             ;;
-        "sync")
-            shift
+        remove)
+            cmd_remove "$@"
+            ;;
+        sync|build)
             cmd_sync "$@"
             ;;
-        "build")
-            shift
-            cmd_sync "$@"  # Backward compatibility alias
+        list)
+            cmd_list "$@"
             ;;
-        "list")
-            cmd_list
+        status)
+            cmd_status "$@"
             ;;
-        "status")
-            cmd_status
+        help|--help|-h|"")
+            show_help
             ;;
-        "version")
+        version|--version|-v)
             echo "$PROGRAM_NAME v$VERSION"
             ;;
-        "help"|"-h"|"--help")
-            show_help
-            ;;
         *)
-            log_error "Unknown command: $1"
-            echo ""
-            show_help
+            log_error "Unknown command: $cmd"
+            echo "Run '$PROGRAM_NAME help' for usage information"
             exit 1
             ;;
     esac

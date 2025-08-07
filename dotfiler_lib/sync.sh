@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# sync.sh - Rsync-based sync engine
+# sync.sh - Simple rsync-based sync engine
 # Compatible with bash 3.2+ (macOS default)
 
 cmd_sync() {
@@ -19,453 +19,272 @@ cmd_sync() {
         esac
     done
     
-    log_info "Starting dotfiles sync..."
+    log_info "Starting sync..."
     
     # Validate configuration
     if ! validate_config; then
-        log_error "Configuration validation failed"
         return 1
     fi
     
-    # Phase 1: Tombstone lifecycle management
-    log_info "Phase 1: Managing tombstone lifecycle"
+    if [[ "$repo_first" == "true" ]]; then
+        sync_repo_first
+    else
+        sync_normal
+    fi
+    
+    log_success "Sync complete"
+}
+
+# Normal bidirectional sync
+sync_normal() {
+    # Step 1: Detect deletions
+    log_info "Detecting deletions..."
+    detect_deletions
+    
+    # Step 2: Filesystem → Repository
+    log_info "Syncing filesystem to repository..."
+    sync_fs_to_repo
+    
+    # Step 3: Repository → Filesystem
+    log_info "Syncing repository to filesystem..."
+    sync_repo_to_fs
+    
+    # Step 4: Enforce deletions
+    log_info "Enforcing deletions..."
+    enforce_deletions
+    
+    # Step 5: Cleanup old tombstones
     cleanup_tombstones
-    
-    # Phase 2: Symlink migration (if repo-first or detect symlinks)  
-    if [[ "$repo_first" == "true" ]] || has_symlinks; then
-        log_info "Phase 2: Migrating symlinks to real files"
-        migrate_symlinks_to_files
-    fi
-    
-    # Phase 3: Automatic deletion detection (unless repo-first)
-    if [[ "$repo_first" == "false" ]]; then
-        log_info "Phase 3: Detecting deletions"
-        auto_detect_deletions
-        log_info "Phase 3: Deletion detection complete"
-    else
-        log_info "Phase 3: Skipping deletion detection (--repo-first mode)"
-    fi
-    
-    # Phase 4: Filesystem → Repository sync (unless repo-first)
-    if [[ "$repo_first" == "false" ]]; then
-        log_info "Phase 4: Syncing filesystem → repository"
-        sync_filesystem_to_repo_rsync
-    else
-        log_info "Phase 4: Skipping filesystem → repository (--repo-first mode)"
-    fi
-    
-    # Phase 5: Repository → Filesystem sync
-    log_info "Phase 5: Syncing repository → filesystem"
-    sync_repo_to_filesystem_rsync "$repo_first"
-    
-    # Phase 6: Cross-machine deletion enforcement
-    log_info "Phase 6: Enforcing cross-machine deletions"
-    enforce_cross_machine_deletions
-    
-    # Phase 7: Auto-add new repo files
-    if [[ "$(get_config AUTO_ADD_NEW)" == "true" ]]; then
-        log_info "Phase 7: Auto-adding new repository files"
-        auto_add_new_files_rsync
-    fi
-    
-    log_success "Sync completed successfully"
-    return 0
 }
 
-# Auto-detect deletions using rsync --delete --dry-run
-auto_detect_deletions() {
-    if [[ ! -f "$TRACKED_ITEMS" ]] || [[ ! -s "$TRACKED_ITEMS" ]]; then
-        log_debug "No tracked items for deletion detection"
-        return 0
-    fi
+# Repo-first sync (for fresh installs)
+sync_repo_first() {
+    log_info "Repo-first sync - overwriting filesystem from repository..."
     
-    # Auto-deletion detection enabled
+    # Replace any symlinks with real files
+    replace_symlinks
     
-    local deletion_count=0
-    local temp_deletions="$(mktemp)"
-    # Generate rsync filters for current tracked items
-    local filter_file="$(generate_rsync_filters)"
-    # For each tracked item, check for deletions
-    local item_count=0
-    local total_items="$(grep -c . "$TRACKED_ITEMS" 2>/dev/null || echo 0)"
-    while IFS= read -r item; do
+    # Copy everything from repo to filesystem (overwrite mode)
+    while IFS= read -r item || [[ -n "$item" ]]; do
         [[ -z "$item" || "$item" == \#* ]] && continue
         
-        item_count=$((item_count + 1))
-        log_debug "Checking deletions [$item_count/$total_items]: $item"
-        local filesystem_path="$(get_filesystem_path "$item")"
-        local repo_path="$REPO_FILES/$(get_repo_file_path "$item")"
+        local fs_path="$(to_filesystem_path "$item")"
+        local repo_subpath="$(to_repo_path "$item")"
+        local repo_full_path="$REPO_FILES/$repo_subpath"
         
-        # Skip if not in repo (can't detect deletion)
-        [[ ! -e "$repo_path" ]] && continue
-        
-        # Simple existence check - if filesystem path doesn't exist, it's deleted
-        if ! path_exists "$filesystem_path"; then
-            log_info "Auto-detected deletion: $item"
-            echo "$item" >> "$temp_deletions"
-            deletion_count=$((deletion_count + 1))
-        fi
-        
-    done < "$TRACKED_ITEMS"
-    # Process detected deletions
-    if [[ $deletion_count -gt 0 ]]; then
-        log_info "Processing $deletion_count auto-detected deletions"
-        
-        while IFS= read -r deleted_item; do
-            # Use the complete deletion process (same as manual delete)
-            local filesystem_path="$(get_filesystem_path "$deleted_item")"
-            manual_deletion_process "$deleted_item" "$filesystem_path"
-            
-        done < "$temp_deletions"
-        
-        log_success "Auto-processed $deletion_count deletions"
-    fi
-    
-    # Cleanup
-    rm -f "$temp_deletions" "$filter_file"
-}
-
-# Generate rsync filter file from ignored.conf and .gitignore files
-generate_rsync_filters() {
-    local filter_file="$(mktemp)"
-    # Add patterns from ignored.conf
-    if [[ -f "$IGNORED_ITEMS" ]]; then
-        while IFS= read -r pattern; do
-            [[ -z "$pattern" || "$pattern" == \#* ]] && continue
-            # Convert to rsync exclude format
-            echo "- $pattern" >> "$filter_file"
-        done < "$IGNORED_ITEMS"
-    fi
-    # Add .gitignore patterns from tracked directories
-    if [[ -f "$TRACKED_ITEMS" ]]; then
-        while IFS= read -r item; do
-            [[ -z "$item" || "$item" == \#* ]] && continue
-            
-            local filesystem_path="$(get_filesystem_path "$item")"
-            
-            # Check for .gitignore in tracked directory
-            if [[ -d "$filesystem_path" ]] && [[ -f "$filesystem_path/.gitignore" ]]; then
-                while IFS= read -r gitpattern; do
-                    [[ -z "$gitpattern" || "$gitpattern" == \#* ]] && continue
-                    echo "- $gitpattern" >> "$filter_file"
-                done < "$filesystem_path/.gitignore"
-            fi
-            
-            # Check parent directories for .gitignore
-            local check_dir="$(dirname "$filesystem_path")"
-            while [[ "$check_dir" != "/" && "$check_dir" != "$HOME" ]]; do
-                if [[ -f "$check_dir/.gitignore" ]]; then
-                    while IFS= read -r gitpattern; do
-                        [[ -z "$gitpattern" || "$gitpattern" == \#* ]] && continue
-                        echo "- $gitpattern" >> "$filter_file"
-                    done < "$check_dir/.gitignore"
-                fi
-                check_dir="$(dirname "$check_dir")"
-            done
-        done < "$TRACKED_ITEMS"
-    fi
-    
-    echo "$filter_file"
-}
-
-# Revolutionary filesystem → repository sync using pure rsync
-sync_filesystem_to_repo_rsync() {
-    if [[ ! -f "$TRACKED_ITEMS" ]] || [[ ! -s "$TRACKED_ITEMS" ]]; then
-        log_info "No tracked items to sync"
-        return 0
-    fi
-    
-    log_info "Syncing filesystem to repository"
-    
-    local filter_file="$(generate_rsync_filters)"
-    local synced_count=0
-    
-    # Sync each tracked item using rsync
-    local sync_count=0
-    local total_sync_items="$(grep -c . "$TRACKED_ITEMS" 2>/dev/null || echo 0)"
-    
-    while IFS= read -r item; do
-        [[ -z "$item" || "$item" == \#* ]] && continue
-        
-        sync_count=$((sync_count + 1))
-        log_debug "Syncing to repo [$sync_count/$total_sync_items]: $item"
-        
-        local filesystem_path="$(get_filesystem_path "$item")"
-        local repo_path="$REPO_FILES/$(get_repo_file_path "$item")"
-        
-        # Skip if filesystem path doesn't exist
-        if ! path_exists "$filesystem_path"; then
-            log_debug "Skipping missing path: $item"
+        if [[ ! -e "$repo_full_path" ]]; then
+            log_warning "Not in repository: $item"
             continue
         fi
         
-        # Create destination directory
-        ensure_dir "$(dirname "$repo_path")"
+        # Ensure parent directory exists
+        ensure_dir "$(dirname "$fs_path")"
         
-        # Use rsync for intelligent sync
-        if [[ -d "$filesystem_path" ]]; then
-            # Directory sync with trailing slashes  
-            if rsync -av --update --filter="merge $filter_file" "$filesystem_path/" "$repo_path/" 2>/dev/null; then
-                log_debug "Synced directory: $item"
-                synced_count=$((synced_count + 1))
-            else
-                log_warning "Failed to sync directory: $item"
-            fi
+        # Copy from repo to filesystem (overwrite)
+        if [[ -d "$repo_full_path" ]]; then
+            rsync -a --delete "$repo_full_path/" "$fs_path/"
         else
-            # File sync
-            if rsync -av --update --filter="merge $filter_file" "$filesystem_path" "$repo_path" 2>/dev/null; then
-                log_debug "Synced file: $item"
-                synced_count=$((synced_count + 1))
-            else
-                log_warning "Failed to sync file: $item"
-            fi
+            rsync -a "$repo_full_path" "$fs_path"
         fi
         
+        log_success "Restored: $item"
     done < "$TRACKED_ITEMS"
-    
-    if [[ $synced_count -gt 0 ]]; then
-        log_success "Synced $synced_count items to repository"
-    fi
-    
-    # Cleanup
-    rm -f "$filter_file"
 }
 
-# Revolutionary repository → filesystem sync using pure rsync
-sync_repo_to_filesystem_rsync() {
-    local overwrite="${1:-false}"
-    
-    if [[ ! -d "$REPO_FILES" ]]; then
-        log_warning "Repository files directory not found: $REPO_FILES"
-        return 0
-    fi
-    
-    log_info "Syncing repository to filesystem"
-    
-    local filter_file="$(generate_rsync_filters)"
-    
-    # Set sync mode
-    if [[ "$overwrite" == "true" ]]; then
-        log_info "Repository-first mode: overwriting filesystem files"
-        local update_flag="--force"
-    else
-        log_info "Update mode: only newer files from repository"
-        local update_flag="--update"
-    fi
-    
-    # Sync each tracked item
-    local synced_count=0
-    
-    if [[ -f "$TRACKED_ITEMS" ]]; then
-        while IFS= read -r item; do
-            [[ -z "$item" || "$item" == \#* ]] && continue
-            
-            local filesystem_path="$(get_filesystem_path "$item")"
-            local repo_path="$REPO_FILES/$(get_repo_file_path "$item")"
-            
-            # Skip if not in repo
-            [[ ! -e "$repo_path" ]] && continue
-            
-            # Check if tombstoned
-            if is_tombstoned "$item"; then
-                log_debug "Skipping tombstoned item: $item"
-                continue
-            fi
-            
-            # Create destination directory
-            ensure_dir "$(dirname "$filesystem_path")"
-            
-            # Use rsync for sync
-            if [[ -d "$repo_path" ]]; then
-                # Directory sync
-                if rsync -av $update_flag --filter="merge $filter_file" "$repo_path/" "$filesystem_path/" 2>/dev/null; then
-                    log_debug "Synced directory from repo: $item"
-                    synced_count=$((synced_count + 1))
-                fi
-            else
-                # File sync
-                if rsync -av $update_flag --filter="merge $filter_file" "$repo_path" "$filesystem_path" 2>/dev/null; then
-                    log_debug "Synced file from repo: $item"
-                    synced_count=$((synced_count + 1))
-                fi
-            fi
-            
-        done < "$TRACKED_ITEMS"
-    fi
-    
-    if [[ $synced_count -gt 0 ]]; then
-        log_success "Deployed $synced_count items to filesystem"
-    fi
-    
-    # Cleanup
-    rm -f "$filter_file"
-}
-
-# Detect existing symlinks that need migration
-has_symlinks() {
-    if [[ ! -f "$TRACKED_ITEMS" ]]; then
-        return 1
-    fi
-    
-    while IFS= read -r item; do
+# Sync filesystem to repository
+sync_fs_to_repo() {
+    while IFS= read -r item || [[ -n "$item" ]]; do
         [[ -z "$item" || "$item" == \#* ]] && continue
         
-        local filesystem_path="$(get_filesystem_path "$item")"
+        local fs_path="$(to_filesystem_path "$item")"
+        local repo_subpath="$(to_repo_path "$item")"
+        local repo_full_path="$REPO_FILES/$repo_subpath"
         
-        if [[ -L "$filesystem_path" ]]; then
-            return 0  # Found at least one symlink
+        if [[ ! -e "$fs_path" ]]; then
+            log_debug "Not on filesystem (will be handled by deletion detection): $item"
+            continue
         fi
+        
+        # Ensure parent directory exists in repo
+        ensure_dir "$(dirname "$repo_full_path")"
+        
+        # Build rsync exclude list from ignored.conf
+        local excludes=""
+        if [[ -f "$IGNORED_ITEMS" ]]; then
+            while IFS= read -r pattern || [[ -n "$pattern" ]]; do
+                [[ -z "$pattern" || "$pattern" == \#* ]] && continue
+                # Convert config path to simple pattern for rsync
+                local simple_pattern="${pattern##*/}"
+                excludes="$excludes --exclude='$simple_pattern'"
+            done < "$IGNORED_ITEMS"
+        fi
+        
+        # Add .gitignore patterns if it exists
+        if [[ -f "$fs_path/.gitignore" ]]; then
+            excludes="$excludes --exclude-from='$fs_path/.gitignore'"
+        fi
+        
+        # Sync to repo
+        if [[ -d "$fs_path" ]]; then
+            eval rsync -a --delete $excludes "$fs_path/" "$repo_full_path/"
+        else
+            rsync -a "$fs_path" "$repo_full_path"
+        fi
+        
+        log_debug "Synced to repo: $item"
     done < "$TRACKED_ITEMS"
-    
-    return 1  # No symlinks found
 }
 
-# Migrate existing symlinks to real files
-migrate_symlinks_to_files() {
-    if [[ ! -f "$TRACKED_ITEMS" ]]; then
-        return 0
-    fi
-    
-    local migrated_count=0
-    
-    while IFS= read -r item; do
+# Sync repository to filesystem
+sync_repo_to_fs() {
+    while IFS= read -r item || [[ -n "$item" ]]; do
         [[ -z "$item" || "$item" == \#* ]] && continue
         
-        local filesystem_path="$(get_filesystem_path "$item")"
-        local repo_path="$REPO_FILES/$(get_repo_path "$filesystem_path")"
+        local fs_path="$(to_filesystem_path "$item")"
+        local repo_subpath="$(to_repo_path "$item")"
+        local repo_full_path="$REPO_FILES/$repo_subpath"
         
-        # Check if it's a symlink
-        if [[ -L "$filesystem_path" ]]; then
-            local symlink_target="$(readlink "$filesystem_path")"
-            
-            log_info "Migrating symlink to real file: $item"
-            log_debug "Symlink: $filesystem_path → $symlink_target"
-            
-            # Remove symlink
-            rm "$filesystem_path"
-            
-            # Copy from repository if exists, otherwise from original target
-            if [[ -e "$repo_path" ]]; then
-                cp -a "$repo_path" "$filesystem_path"
-                log_debug "Copied from repository: $item"
-            elif [[ -e "$symlink_target" ]]; then
-                cp -a "$symlink_target" "$filesystem_path"
-                log_debug "Copied from symlink target: $item"
-            else
-                log_warning "Could not migrate symlink (target missing): $item"
-                continue
-            fi
-            
-            migrated_count=$((migrated_count + 1))
+        if [[ ! -e "$repo_full_path" ]]; then
+            log_debug "Not in repository (may have been deleted): $item"
+            continue
         fi
         
+        # Ensure parent directory exists
+        ensure_dir "$(dirname "$fs_path")"
+        
+        # Only sync if repo version is newer or filesystem doesn't exist
+        if [[ ! -e "$fs_path" ]] || [[ "$repo_full_path" -nt "$fs_path" ]]; then
+            if [[ -d "$repo_full_path" ]]; then
+                # For directories, use rsync with update flag
+                rsync -au "$repo_full_path/" "$fs_path/"
+            else
+                rsync -au "$repo_full_path" "$fs_path"
+            fi
+            log_debug "Updated from repo: $item"
+        fi
     done < "$TRACKED_ITEMS"
-    
-    if [[ $migrated_count -gt 0 ]]; then
-        log_success "Migrated $migrated_count symlinks to real files"
-    fi
 }
 
-# Enforce deletions on cross-machine basis
-enforce_cross_machine_deletions() {
-    if [[ ! -f "$DELETED_ITEMS" ]]; then
-        log_debug "No tombstone file for cross-machine deletions"
-        return 0
-    fi
+# Detect deletions from filesystem
+detect_deletions() {
+    local timestamp="$(date +%s)"
     
+    while IFS= read -r item || [[ -n "$item" ]]; do
+        [[ -z "$item" || "$item" == \#* ]] && continue
+        
+        local fs_path="$(to_filesystem_path "$item")"
+        
+        # If tracked item doesn't exist on filesystem, add to deleted.conf
+        if [[ ! -e "$fs_path" ]]; then
+            # Check if already in deleted.conf
+            if ! grep -q "^$item|" "$DELETED_ITEMS" 2>/dev/null; then
+                echo "$item|$timestamp" >> "$DELETED_ITEMS"
+                log_info "Detected deletion: $item"
+                
+                # Remove from repository
+                local repo_subpath="$(to_repo_path "$item")"
+                local repo_full_path="$REPO_FILES/$repo_subpath"
+                if [[ -e "$repo_full_path" ]]; then
+                    rm -rf "$repo_full_path"
+                    log_debug "Removed from repo: $item"
+                fi
+            fi
+            
+            # Remove from tracking
+            remove_from_tracking "$fs_path"
+        fi
+    done < "$TRACKED_ITEMS"
+}
+
+# Enforce deletions from deleted.conf
+enforce_deletions() {
     local current_time="$(date +%s)"
-    local active_days="$(get_config DELETE_ACTIVE_DAYS 90)"
-    local active_seconds=$((active_days * 24 * 3600))
-    local enforced_count=0
+    local ninety_days=$((90 * 24 * 60 * 60))
     
-    while IFS='|' read -r path timestamp; do
-        [[ -z "$path" || "$path" == \#* ]] && continue
-        
-        # Handle entries without timestamp
-        if [[ -z "$timestamp" ]]; then
-            timestamp="$current_time"
-        fi
+    while IFS='|' read -r item timestamp || [[ -n "$item" ]]; do
+        [[ -z "$item" || "$item" == \#* ]] && continue
         
         local age=$((current_time - timestamp))
         
-        # Only enforce during active period
-        if [[ $age -lt $active_seconds ]]; then
-            local filesystem_path="$(get_filesystem_path "$path")"
+        # Enforce deletion if within 90 days
+        if [[ $age -lt $ninety_days ]]; then
+            local fs_path="$(to_filesystem_path "$item")"
+            local repo_subpath="$(to_repo_path "$item")"
+            local repo_full_path="$REPO_FILES/$repo_subpath"
             
-            if path_exists "$filesystem_path"; then
-                log_info "Enforcing cross-machine deletion: $path"
-                rm -rf "$filesystem_path"
-                enforced_count=$((enforced_count + 1))
+            # Remove from filesystem if it exists
+            if [[ -e "$fs_path" ]]; then
+                rm -rf "$fs_path"
+                log_info "Enforced deletion: $item"
             fi
+            
+            # Remove from repository if it exists
+            if [[ -e "$repo_full_path" ]]; then
+                rm -rf "$repo_full_path"
+                log_debug "Removed from repo: $item"
+            fi
+            
+            # Remove from tracking
+            remove_from_tracking "$fs_path"
         fi
-        
     done < "$DELETED_ITEMS"
-    
-    if [[ $enforced_count -gt 0 ]]; then
-        log_success "Enforced $enforced_count cross-machine deletions"
-    fi
 }
 
-# Auto-add new files from repository using rsync discovery
-auto_add_new_files_rsync() {
-    if [[ ! -d "$REPO_FILES" ]]; then
-        return 0
-    fi
+# Cleanup old tombstones
+cleanup_tombstones() {
+    local current_time="$(date +%s)"
+    local one_twenty_days=$((120 * 24 * 60 * 60))
+    local temp_file="$DELETED_ITEMS.tmp"
     
-    local added_count=0
-    local temp_new_files="$(mktemp)"
+    > "$temp_file"
     
-    # Use rsync to discover new files in repository
-    rsync -av --dry-run --existing "$REPO_FILES/" /dev/null 2>/dev/null | \
-        grep -E "^[^d]" | \
-        awk '{print $NF}' > "$temp_new_files" || true
-    
-    # Process discovered files
-    while IFS= read -r repo_relative_path; do
-        [[ -z "$repo_relative_path" ]] && continue
+    while IFS='|' read -r item timestamp || [[ -n "$item" ]]; do
+        [[ -z "$item" || "$item" == \#* ]] && continue
         
-        local filesystem_path="$(get_filesystem_path "$repo_relative_path")"
+        local age=$((current_time - timestamp))
         
-        # Check if already tracked
-        if is_tracked "$filesystem_path"; then
-            continue
-        fi
-        
-        # Check if ignored
-        if is_ignored "$filesystem_path"; then
-            continue
-        fi
-        
-        # Check if tombstoned
-        if is_tombstoned "$repo_relative_path"; then
-            continue
-        fi
-        
-        # Decide whether to track file or parent directory
-        local dir_path="$(dirname "$filesystem_path")"
-        
-        if [[ ! -d "$dir_path" ]]; then
-            # Directory doesn't exist, track the directory
-            local repo_dir_path="$(get_repo_path "$dir_path")"
-            echo "$repo_dir_path" >> "$TRACKED_ITEMS"
-            log_info "Auto-added directory: $repo_dir_path"
+        # Keep tombstones less than 120 days old
+        if [[ $age -lt $one_twenty_days ]]; then
+            echo "$item|$timestamp" >> "$temp_file"
         else
-            # Directory exists, track the specific file
-            local repo_file_path="$(get_repo_path "$filesystem_path")"
-            echo "$repo_file_path" >> "$TRACKED_ITEMS"
-            log_info "Auto-added file: $repo_file_path"
+            log_debug "Removed old tombstone: $item"
         fi
-        
-        added_count=$((added_count + 1))
-        
-    done < "$temp_new_files"
+    done < "$DELETED_ITEMS"
     
-    if [[ $added_count -gt 0 ]]; then
-        # Sort and remove duplicates
-        sort -u "$TRACKED_ITEMS" -o "$TRACKED_ITEMS"
-        log_success "Auto-added $added_count new items from repository"
-    fi
-    
-    # Cleanup
-    rm -f "$temp_new_files"
+    mv "$temp_file" "$DELETED_ITEMS"
+}
+
+# Replace symlinks with real files
+replace_symlinks() {
+    while IFS= read -r item || [[ -n "$item" ]]; do
+        [[ -z "$item" || "$item" == \#* ]] && continue
+        
+        local fs_path="$(to_filesystem_path "$item")"
+        
+        # Check if it's a symlink
+        if [[ -L "$fs_path" ]]; then
+            local target="$(readlink "$fs_path")"
+            log_info "Replacing symlink with real file: $item"
+            
+            # Remove symlink
+            rm "$fs_path"
+            
+            # Copy target to location
+            if [[ -e "$target" ]]; then
+                if [[ -d "$target" ]]; then
+                    cp -R "$target" "$fs_path"
+                else
+                    cp "$target" "$fs_path"
+                fi
+                log_success "Replaced symlink: $item"
+            else
+                log_warning "Symlink target not found: $target"
+            fi
+        fi
+    done < "$TRACKED_ITEMS"
+}
+
+# Backward compatibility
+cmd_build() {
+    cmd_sync "$@"
 }
