@@ -37,27 +37,31 @@ cmd_sync() {
 
 # Normal bidirectional sync
 sync_normal() {
-    # Step 1: Detect deletions
-    log_info "Detecting deletions..."
+    # Step 1: Detect deletions from filesystem
+    log_info "Detecting filesystem deletions..."
     detect_deletions
     
-    # Step 2: Discover new items in repository
+    # Step 2: Detect deletions from repository
+    log_info "Detecting repository deletions..."
+    detect_repo_deletions
+    
+    # Step 3: Discover new items in repository
     log_info "Discovering new repository items..."
     discover_repo_items
     
-    # Step 3: Filesystem → Repository
+    # Step 4: Filesystem → Repository
     log_info "Syncing filesystem to repository..."
     sync_fs_to_repo
     
-    # Step 4: Repository → Filesystem
+    # Step 5: Repository → Filesystem
     log_info "Syncing repository to filesystem..."
     sync_repo_to_fs
     
-    # Step 5: Enforce deletions
+    # Step 6: Enforce deletions
     log_info "Enforcing deletions..."
     enforce_deletions
     
-    # Step 6: Cleanup old tombstones
+    # Step 7: Cleanup old tombstones
     cleanup_tombstones
 }
 
@@ -207,6 +211,37 @@ detect_deletions() {
                 if [[ -e "$repo_full_path" ]]; then
                     rm -rf "$repo_full_path"
                     log_debug "Removed from repo: $item"
+                fi
+                
+                # Remove from tracking (only when first detected)
+                remove_from_tracking "$fs_path"
+            fi
+        fi
+    done < "$TRACKED_ITEMS"
+}
+
+# Detect deletions from repository
+detect_repo_deletions() {
+    local timestamp="$(date +%s)"
+    
+    while IFS= read -r item || [[ -n "$item" ]]; do
+        [[ -z "$item" || "$item" == \#* ]] && continue
+        
+        local repo_subpath="$(to_repo_path "$item")"
+        local repo_full_path="$REPO_FILES/$repo_subpath"
+        local fs_path="$(to_filesystem_path "$item")"
+        
+        # If tracked item doesn't exist in repository, add to deleted.conf
+        if [[ ! -e "$repo_full_path" ]]; then
+            # Check if already in deleted.conf
+            if ! grep -q "^$item|" "$DELETED_ITEMS" 2>/dev/null; then
+                echo "$item|$timestamp" >> "$DELETED_ITEMS"
+                log_info "Detected repository deletion: $item"
+                
+                # Remove from filesystem if it exists
+                if [[ -e "$fs_path" ]]; then
+                    rm -rf "$fs_path"
+                    log_debug "Removed from filesystem: $item"
                 fi
                 
                 # Remove from tracking (only when first detected)

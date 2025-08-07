@@ -317,6 +317,37 @@ test_deletion_messaging() {
     fi
 }
 
+test_repo_deletion_detection() {
+    log_test "Testing repository deletion detection..."
+    
+    # Create and track a file
+    echo "repo delete test" > "$HOME_TEST_DIR/repo-delete-test.txt"
+    dotfiler track "$HOME_TEST_DIR/repo-delete-test.txt" > /dev/null
+    
+    # Verify file is in repository
+    assert_exists "$REPO_HOME_DIR/dotfiler-test/repo-delete-test.txt" "File tracked to repository"
+    
+    # Delete file directly from repository (simulating deletion on another machine)
+    rm "$REPO_HOME_DIR/dotfiler-test/repo-delete-test.txt"
+    
+    # Run sync - should detect repository deletion
+    local sync_output=$(dotfiler sync 2>&1)
+    
+    # Verify deletion was detected
+    TESTS_RUN=$((TESTS_RUN + 1))
+    if echo "$sync_output" | grep -q "Detected repository deletion:"; then
+        log_pass "Repository deletion detected"
+    else
+        log_fail "Repository deletion not detected"
+    fi
+    
+    # Verify file removed from filesystem
+    assert_not_exists "$HOME_TEST_DIR/repo-delete-test.txt" "File removed from filesystem"
+    
+    # Verify tombstone created
+    assert_in_config "$HOME/.config/dotfiler/deleted.conf" "~/dotfiler-test/repo-delete-test.txt" "Deletion tombstoned"
+}
+
 test_repo_first_mode() {
     log_test "Testing repo-first mode..."
     
@@ -377,9 +408,10 @@ show_directionality_diagram() {
     echo -e "  Command:  ${YELLOW}dotfiler sync${NC}"
     echo -e "  Flows:"
     echo -e "    Step 1: 📁 Filesystem  ←→  🗂️  Repository     (bidirectional)"
-    echo -e "    Step 2: 🚫 Missing     →   ⚰️  deleted.conf   (auto-tombstone)"
-    echo -e "    Step 3: ⚰️  Tombstone  →   ❌ Deletion       (90-day enforce)"
-    echo -e "    Step 4: 🗑️  Old tombs  →   💀 Cleanup        (120-day remove)"
+    echo -e "    Step 2: 🚫 FS missing  →   ⚰️  deleted.conf   (auto-tombstone)"
+    echo -e "    Step 3: 🚫 Repo missing →  ⚰️  deleted.conf   (auto-tombstone)"
+    echo -e "    Step 4: ⚰️  Tombstone  →   ❌ Deletion       (90-day enforce)"
+    echo -e "    Step 5: 🗑️  Old tombs  →   💀 Cleanup        (120-day remove)"
     echo
     
     echo -e "${GREEN}┌─────────────────────────────────────────────────────────────────────┐${NC}"
@@ -401,10 +433,17 @@ show_directionality_diagram() {
     echo -e "               📝 Remove from tracked.conf"
     echo -e "               ⚰️  Add tombstone to deleted.conf"
     echo
-    echo -e "  ${YELLOW}B) Natural File Deletion:${NC}"
+    echo -e "  ${YELLOW}B) Natural Filesystem Deletion:${NC}"
     echo -e "     Command:  rm <file> (standard deletion)"
     echo -e "     On Sync:  🔍 Detect missing file"
     echo -e "               🗂️  Auto-remove from repository"
+    echo -e "               📝 Auto-remove from tracked.conf (first time only)"
+    echo -e "               ⚰️  Auto-add to deleted.conf"
+    echo
+    echo -e "  ${YELLOW}C) Repository Deletion:${NC}"
+    echo -e "     Action:   File deleted from repo (e.g., on another machine)"
+    echo -e "     On Sync:  🔍 Detect missing in repository"
+    echo -e "               📁 Auto-remove from filesystem"
     echo -e "               📝 Auto-remove from tracked.conf (first time only)"
     echo -e "               ⚰️  Auto-add to deleted.conf"
     echo
@@ -458,6 +497,7 @@ run_all_tests() {
     test_deletion_detection
     test_delete_command
     test_deletion_messaging
+    test_repo_deletion_detection
     test_repo_first_mode
     test_list_and_status
     
