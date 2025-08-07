@@ -76,16 +76,16 @@ get_repo_path() {
     local path="$1"
     local normalized="$(normalize_path "$path")"
     
-    # If path starts with $HOME, store relative to HOME (literal string, not variable)
+    # If path starts with $HOME, store with $HOME variable for portability
     if [[ "$normalized" == "$HOME"* ]]; then
-        echo "HOME${normalized#$HOME}"
+        echo "\$HOME${normalized#$HOME}"
     else
         # Store absolute paths as-is
         echo "$normalized"
     fi
 }
 
-# Convert repo path back to filesystem path
+# Convert repo path back to filesystem path  
 get_filesystem_path() {
     local repo_path="$1"
     # Handle $HOME expansion in tracked.conf entries
@@ -93,6 +93,17 @@ get_filesystem_path() {
         echo "$HOME${repo_path#\$HOME}"
     elif [[ "$repo_path" == "HOME"* ]]; then
         echo "$HOME${repo_path#HOME}"
+    else
+        echo "$repo_path"
+    fi
+}
+
+# Get the actual file path in repository (converts $HOME to literal HOME)
+get_repo_file_path() {
+    local repo_path="$1"
+    # Convert $HOME to literal HOME for file storage
+    if [[ "$repo_path" == "\$HOME"* ]]; then
+        echo "HOME${repo_path#\$HOME}"
     else
         echo "$repo_path"
     fi

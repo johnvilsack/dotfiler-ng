@@ -76,7 +76,8 @@ cmd_add() {
 sync_file_to_repo() {
     local source="$1"
     local repo_path="$(get_repo_path "$source")"
-    local dest_path="$REPO_FILES/$repo_path"
+    local repo_file_path="$(get_repo_file_path "$repo_path")"
+    local dest_path="$REPO_FILES/$repo_file_path"
     local dest_dir="$(dirname "$dest_path")"
     
     # Create destination directory
@@ -93,7 +94,8 @@ sync_file_to_repo() {
 sync_directory_to_repo() {
     local source="$1"
     local repo_path="$(get_repo_path "$source")"
-    local dest_path="$REPO_FILES/$repo_path"
+    local repo_file_path="$(get_repo_file_path "$repo_path")"
+    local dest_path="$REPO_FILES/$repo_file_path"
     
     # Create destination directory
     ensure_dir "$dest_path"

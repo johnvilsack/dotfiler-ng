@@ -94,7 +94,7 @@ auto_detect_deletions() {
         item_count=$((item_count + 1))
         log_debug "Checking deletions [$item_count/$total_items]: $item"
         local filesystem_path="$(get_filesystem_path "$item")"
-        local repo_path="$REPO_FILES/$(get_repo_path "$filesystem_path")"
+        local repo_path="$REPO_FILES/$(get_repo_file_path "$item")"
         
         # Skip if not in repo (can't detect deletion)
         [[ ! -e "$repo_path" ]] && continue
@@ -112,16 +112,9 @@ auto_detect_deletions() {
         log_info "Processing $deletion_count auto-detected deletions"
         
         while IFS= read -r deleted_item; do
-            # Add to tombstone with timestamp
-            add_tombstone "$deleted_item"
-            # Remove from tracking
-            remove_from_tracking "$deleted_item"
-            
-            # Add to ignore list to prevent re-adding
-            if [[ -f "$IGNORED_ITEMS" ]] && ! grep -q "^${deleted_item}$" "$IGNORED_ITEMS"; then
-                echo "$deleted_item" >> "$IGNORED_ITEMS"
-                sort -u "$IGNORED_ITEMS" -o "$IGNORED_ITEMS"
-            fi
+            # Use the complete deletion process (same as manual delete)
+            local filesystem_path="$(get_filesystem_path "$deleted_item")"
+            manual_deletion_process "$deleted_item" "$filesystem_path"
             
         done < "$temp_deletions"
         
@@ -198,7 +191,7 @@ sync_filesystem_to_repo_rsync() {
         log_debug "Syncing to repo [$sync_count/$total_sync_items]: $item"
         
         local filesystem_path="$(get_filesystem_path "$item")"
-        local repo_path="$REPO_FILES/$(get_repo_path "$filesystem_path")"
+        local repo_path="$REPO_FILES/$(get_repo_file_path "$item")"
         
         # Skip if filesystem path doesn't exist
         if ! path_exists "$filesystem_path"; then
@@ -268,7 +261,7 @@ sync_repo_to_filesystem_rsync() {
             [[ -z "$item" || "$item" == \#* ]] && continue
             
             local filesystem_path="$(get_filesystem_path "$item")"
-            local repo_path="$REPO_FILES/$(get_repo_path "$filesystem_path")"
+            local repo_path="$REPO_FILES/$(get_repo_file_path "$item")"
             
             # Skip if not in repo
             [[ ! -e "$repo_path" ]] && continue

@@ -25,7 +25,7 @@ cmd_delete() {
     # Confirm deletion
     log_warning "Manual deletion - this will delete '$repo_path' from:"
     echo "  - Filesystem: $full_path"
-    echo "  - Repository: $REPO_FILES/$repo_path"
+    echo "  - Repository: $REPO_FILES/$(get_repo_file_path "$repo_path")"
     echo "  - Cross-machine enforcement for $(get_config DELETE_ACTIVE_DAYS 90) days"
     
     if ! confirm "Proceed with manual deletion?"; then
@@ -57,7 +57,7 @@ manual_deletion_process() {
     fi
     
     # Step 4: Remove from repository
-    local repo_file_path="$REPO_FILES/$repo_path"
+    local repo_file_path="$REPO_FILES/$(get_repo_file_path "$repo_path")"
     if [[ -e "$repo_file_path" ]]; then
         rm -rf "$repo_file_path"
         log_info "Removed from repository: $repo_path"
@@ -203,7 +203,7 @@ cleanup_tombstones() {
 enforce_deletion() {
     local path="$1"
     local filesystem_path="$(get_filesystem_path "$path")"
-    local repo_file_path="$REPO_FILES/$path"
+    local repo_file_path="$REPO_FILES/$(get_repo_file_path "$path")"
     
     # Delete from filesystem if exists
     if path_exists "$filesystem_path"; then
