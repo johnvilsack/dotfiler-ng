@@ -1,5 +1,8 @@
 # Changelog
 
+## [6.0.0] - 2025-08-06
+- RELEASE: Complete Tools
+
 ## [5.0.1] - 2025-08-06
 - FIX: Complete rewrite with simplified rsync-based architecture
 - ADD: Comprehensive test suite (test_all.sh) with 25 test cases
