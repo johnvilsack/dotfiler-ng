@@ -37,29 +37,29 @@ cmd_sync() {
 
 # Normal bidirectional sync
 sync_normal() {
-    # Step 1: Detect deletions from filesystem
+    # Step 1: Enforce deletions FIRST (before any syncing)
+    log_info "Enforcing deletions..."
+    enforce_deletions
+    
+    # Step 2: Detect deletions from filesystem
     log_info "Detecting filesystem deletions..."
     detect_deletions
     
-    # Step 2: Detect deletions from repository
+    # Step 3: Detect deletions from repository
     log_info "Detecting repository deletions..."
     detect_repo_deletions
     
-    # Step 3: Discover new items in repository
+    # Step 4: Discover new items in repository
     log_info "Discovering new repository items..."
     discover_repo_items
     
-    # Step 4: Filesystem → Repository
+    # Step 5: Filesystem → Repository
     log_info "Syncing filesystem to repository..."
     sync_fs_to_repo
     
-    # Step 5: Repository → Filesystem
+    # Step 6: Repository → Filesystem
     log_info "Syncing repository to filesystem..."
     sync_repo_to_fs
-    
-    # Step 6: Enforce deletions
-    log_info "Enforcing deletions..."
-    enforce_deletions
     
     # Step 7: Cleanup old tombstones
     cleanup_tombstones
@@ -75,40 +75,58 @@ sync_repo_first() {
     # Replace any symlinks with real files
     replace_symlinks
 
-    # Squash any existing configuration
-    local config_fs_path="$HOME/.config"
+    # Restore config from repository if it exists
     local config_repo_path="$REPO_FILES/HOME/.config/dotfiler"
-    local original_folder="${config_fs_path}/dotfiler"
-    local original_path="${config_fs_path}/"
-    rm -rf $original_folder
-    cp -r $config_repo_path $original_path
-    log_warning "Overwrote existing configuration in favor of repo version"
+    if [[ -d "$config_repo_path" ]]; then
+        local config_fs_path="$HOME/.config/dotfiler"
+        ensure_dir "$config_fs_path"
+        
+        # Backup current config
+        if [[ -d "$config_fs_path.bak" ]]; then
+            rm -rf "$config_fs_path.bak"
+        fi
+        cp -r "$config_fs_path" "$config_fs_path.bak" 2>/dev/null || true
+        
+        # Restore config from repository
+        rsync -a "$config_repo_path/" "$config_fs_path/"
+        log_info "Restored configuration from repository"
+        
+        # Reload config files
+        source "$CONFIG_DIR/config" 2>/dev/null || true
+        TRACKED_ITEMS="$CONFIG_DIR/tracked.conf"
+        IGNORED_ITEMS="$CONFIG_DIR/ignored.conf"
+        DELETED_ITEMS="$CONFIG_DIR/deleted.conf"
+    fi
 
     # Copy everything from repo to filesystem (overwrite mode)
-    while IFS= read -r item || [[ -n "$item" ]]; do
-        [[ -z "$item" || "$item" == \#* ]] && continue
-        
-        local fs_path="$(to_filesystem_path "$item")"
-        local repo_subpath="$(to_repo_path "$item")"
-        local repo_full_path="$REPO_FILES/$repo_subpath"
-        
-        if [[ ! -e "$repo_full_path" ]]; then
-            log_warning "Not in repository: $item"
-            continue
-        fi
-        
-        # Ensure parent directory exists
-        ensure_dir "$(dirname "$fs_path")"
-        
-        # Copy from repo to filesystem (overwrite)
-        if [[ -d "$repo_full_path" ]]; then
-            rsync -a --delete "$repo_full_path/" "$fs_path/"
-        else
-            rsync -a "$repo_full_path" "$fs_path"
-        fi
-        
-        log_success "Restored: $item"
-    done < "$TRACKED_ITEMS"
+    if [[ -f "$TRACKED_ITEMS" ]]; then
+        while IFS= read -r item || [[ -n "$item" ]]; do
+            [[ -z "$item" || "$item" == \#* ]] && continue
+            
+            local fs_path="$(to_filesystem_path "$item")"
+            local repo_subpath="$(to_repo_path "$item")"
+            local repo_full_path="$REPO_FILES/$repo_subpath"
+            
+            if [[ ! -e "$repo_full_path" ]]; then
+                log_warning "Not in repository: $item"
+                continue
+            fi
+            
+            # Ensure parent directory exists
+            ensure_dir "$(dirname "$fs_path")"
+            
+            # Copy from repo to filesystem (overwrite)
+            if [[ -d "$repo_full_path" ]]; then
+                rsync -a --delete "$repo_full_path/" "$fs_path/"
+            else
+                rsync -a "$repo_full_path" "$fs_path"
+            fi
+            
+            log_success "Restored: $item"
+        done < "$TRACKED_ITEMS"
+    else
+        log_warning "No tracked items found - use 'dotfiler track' to add items"
+    fi
 }
 
 # Discover new items in repository that should be tracked
@@ -149,9 +167,16 @@ sync_fs_to_repo() {
         if [[ -f "$IGNORED_ITEMS" ]]; then
             while IFS= read -r pattern || [[ -n "$pattern" ]]; do
                 [[ -z "$pattern" || "$pattern" == \#* ]] && continue
-                # Convert config path to simple pattern for rsync
-                local simple_pattern="${pattern##*/}"
-                excludes="$excludes --exclude='$simple_pattern'"
+                # Check if it's a glob pattern or a specific path
+                if [[ "$pattern" == *"*"* ]]; then
+                    # It's a glob pattern, use as-is
+                    excludes="$excludes --exclude='$pattern'"
+                else
+                    # It's a specific path, extract filename
+                    local fs_pattern="$(to_filesystem_path "$pattern")"
+                    local rel_pattern="${fs_pattern##*/}"
+                    excludes="$excludes --exclude='$rel_pattern'"
+                fi
             done < "$IGNORED_ITEMS"
         fi
         
@@ -160,18 +185,16 @@ sync_fs_to_repo() {
             excludes="$excludes --exclude-from='$fs_path/.gitignore'"
         fi
         
-        # Sync to repo (only if newer)
+        # Sync to repo (only if newer or different)
         if [[ -d "$fs_path" ]]; then
-            # Check if any files would be updated
-            local changes=$(eval rsync -aun --delete $excludes "$fs_path/" "$repo_full_path/" 2>/dev/null | grep -v "^$" | head -5)
-            if [[ -n "$changes" ]]; then
-                log_info "📁→🗂️  $fs_path => Repository"
-                eval rsync -au --delete $excludes "$fs_path/" "$repo_full_path/"
-            fi
+            # Directory sync with update option
+            log_debug "Syncing directory: $fs_path => $repo_full_path"
+            log_debug "Expanded paths for rsync: $fs_path/ => $repo_full_path/"
+            eval rsync -au --delete $excludes "$fs_path/" "$repo_full_path/"
         else
-            # For single files, check if update needed
+            # File sync with update option
             if [[ ! -f "$repo_full_path" ]] || [[ "$fs_path" -nt "$repo_full_path" ]]; then
-                log_info "📁→🗂️  $fs_path => Repository"
+                log_info "Syncing file: $fs_path => Repository"
                 rsync -au "$fs_path" "$repo_full_path"
             fi
         fi
@@ -195,21 +218,15 @@ sync_repo_to_fs() {
         # Ensure parent directory exists
         ensure_dir "$(dirname "$fs_path")"
         
-        # Only sync if repo version is newer or filesystem doesn't exist
-        if [[ ! -e "$fs_path" ]]; then
-            # File doesn't exist on filesystem, copy from repo
-            log_info "🗂️→📁  Repository => $fs_path (new)"
-            if [[ -d "$repo_full_path" ]]; then
-                rsync -a "$repo_full_path/" "$fs_path/"
-            else
-                rsync -a "$repo_full_path" "$fs_path"
-            fi
-        elif [[ "$repo_full_path" -nt "$fs_path" ]]; then
-            # Repo version is newer, update filesystem
-            log_info "🗂️→📁  Repository => $fs_path (updated)"
-            if [[ -d "$repo_full_path" ]]; then
-                rsync -au "$repo_full_path/" "$fs_path/"
-            else
+        # Sync with update option (only if newer)
+        if [[ -d "$repo_full_path" ]]; then
+            # Directory sync
+            log_debug "Syncing directory: $repo_full_path => $fs_path"
+            rsync -au "$repo_full_path/" "$fs_path/"
+        else
+            # File sync
+            if [[ ! -f "$fs_path" ]] || [[ "$repo_full_path" -nt "$fs_path" ]]; then
+                log_info "Syncing file: Repository => $fs_path"
                 rsync -au "$repo_full_path" "$fs_path"
             fi
         fi
@@ -227,10 +244,15 @@ detect_deletions() {
         
         # If tracked item doesn't exist on filesystem, add to deleted.conf
         if [[ ! -e "$fs_path" ]]; then
-            # Check if already in deleted.conf
-            if ! grep -q "^$item|" "$DELETED_ITEMS" 2>/dev/null; then
+            # Check if already in deleted.conf (escape $ in grep pattern)
+            local escaped_item="$(echo "$item" | sed 's/\$/\\$/g')"
+            if ! grep -q "^${escaped_item}|" "$DELETED_ITEMS" 2>/dev/null; then
                 echo "$item|$timestamp" >> "$DELETED_ITEMS"
                 log_info "Detected deletion: $item"
+                
+                # Add to ignore list to prevent re-tracking
+                echo "$item" >> "$IGNORED_ITEMS"
+                log_debug "Added to ignore list: $item"
                 
                 # Remove from repository
                 local repo_subpath="$(to_repo_path "$item")"
@@ -240,7 +262,7 @@ detect_deletions() {
                     log_debug "Removed from repo: $item"
                 fi
                 
-                # Remove from tracking (only when first detected)
+                # Remove from tracking immediately to prevent re-sync
                 remove_from_tracking "$fs_path"
             fi
         fi
@@ -258,20 +280,24 @@ detect_repo_deletions() {
         local repo_full_path="$REPO_FILES/$repo_subpath"
         local fs_path="$(to_filesystem_path "$item")"
         
-        # If tracked item doesn't exist in repository, add to deleted.conf
-        if [[ ! -e "$repo_full_path" ]]; then
-            # Check if already in deleted.conf
-            if ! grep -q "^$item|" "$DELETED_ITEMS" 2>/dev/null; then
+        # If tracked item doesn't exist in repository but exists on filesystem
+        # This indicates the file was deleted from the repository (e.g., on another machine)
+        if [[ ! -e "$repo_full_path" ]] && [[ -e "$fs_path" ]]; then
+            # Check if already in deleted.conf (escape $ in grep pattern)
+            local escaped_item="$(echo "$item" | sed 's/\$/\\$/g')"
+            if ! grep -q "^${escaped_item}|" "$DELETED_ITEMS" 2>/dev/null; then
                 echo "$item|$timestamp" >> "$DELETED_ITEMS"
                 log_info "Detected repository deletion: $item"
                 
-                # Remove from filesystem if it exists
-                if [[ -e "$fs_path" ]]; then
-                    rm -rf "$fs_path"
-                    log_debug "Removed from filesystem: $item"
-                fi
+                # Add to ignore list to prevent re-tracking
+                echo "$item" >> "$IGNORED_ITEMS"
+                log_debug "Added to ignore list: $item"
                 
-                # Remove from tracking (only when first detected)
+                # Remove from filesystem to sync with repository state
+                rm -rf "$fs_path"
+                log_info "Removed from filesystem to match repository: $item"
+                
+                # Remove from tracking immediately
                 remove_from_tracking "$fs_path"
             fi
         fi
@@ -283,8 +309,15 @@ enforce_deletions() {
     local current_time="$(date +%s)"
     local ninety_days=$((90 * 24 * 60 * 60))
     
+    [[ ! -f "$DELETED_ITEMS" ]] && return 0
+    
     while IFS='|' read -r item timestamp || [[ -n "$item" ]]; do
         [[ -z "$item" || "$item" == \#* ]] && continue
+        
+        # Parse timestamp (handle missing timestamps gracefully)
+        if [[ -z "$timestamp" ]]; then
+            timestamp="$current_time"
+        fi
         
         local age=$((current_time - timestamp))
         
@@ -305,6 +338,11 @@ enforce_deletions() {
                 rm -rf "$repo_full_path"
                 log_debug "Removed from repo: $item"
             fi
+            
+            # Remove from tracking if still present
+            if is_tracked "$fs_path"; then
+                remove_from_tracking "$fs_path"
+            fi
         fi
     done < "$DELETED_ITEMS"
 }
@@ -315,10 +353,17 @@ cleanup_tombstones() {
     local one_twenty_days=$((120 * 24 * 60 * 60))
     local temp_file="$DELETED_ITEMS.tmp"
     
+    [[ ! -f "$DELETED_ITEMS" ]] && return 0
+    
     > "$temp_file"
     
     while IFS='|' read -r item timestamp || [[ -n "$item" ]]; do
         [[ -z "$item" || "$item" == \#* ]] && continue
+        
+        # Parse timestamp (handle missing timestamps gracefully)
+        if [[ -z "$timestamp" ]]; then
+            timestamp="$current_time"
+        fi
         
         local age=$((current_time - timestamp))
         
@@ -327,6 +372,16 @@ cleanup_tombstones() {
             echo "$item|$timestamp" >> "$temp_file"
         else
             log_debug "Removed old tombstone: $item"
+            # Remove from tracking when tombstone expires
+            local fs_path="$(to_filesystem_path "$item")"
+            remove_from_tracking "$fs_path"
+            # Also remove from ignore list when tombstone expires
+            if [[ -f "$IGNORED_ITEMS" ]]; then
+                local escaped_item="$(echo "$item" | sed 's/[\$\/]/\\&/g')"
+                sed -i.bak "/^${escaped_item}$/d" "$IGNORED_ITEMS"
+                rm -f "${IGNORED_ITEMS}.bak"
+                log_debug "Removed from ignore list: $item"
+            fi
         fi
     done < "$DELETED_ITEMS"
     

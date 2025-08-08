@@ -199,8 +199,8 @@ test_track_functionality() {
     dotfiler track "$SHARED_TEST_DIR/shared-subdir" > /dev/null
     
     # Verify files are tracked in config
-    assert_in_config "$HOME/.config/dotfiler/tracked.conf" "~/dotfiler-test/file1.txt" "Track home file"
-    assert_in_config "$HOME/.config/dotfiler/tracked.conf" "~/dotfiler-test/subdir" "Track home directory"
+    assert_in_config "$HOME/.config/dotfiler/tracked.conf" "\$HOME/dotfiler-test/file1.txt" "Track home file"
+    assert_in_config "$HOME/.config/dotfiler/tracked.conf" "\$HOME/dotfiler-test/subdir" "Track home directory"
     assert_in_config "$HOME/.config/dotfiler/tracked.conf" "/Users/Shared/TEST/shared1.txt" "Track shared file"
     assert_in_config "$HOME/.config/dotfiler/tracked.conf" "/Users/Shared/TEST/shared-subdir" "Track shared directory"
     
@@ -266,7 +266,7 @@ test_deletion_detection() {
     
     # Verify file is removed from repo and added to deleted.conf
     assert_not_exists "$REPO_HOME_DIR/dotfiler-test/file2.conf" "Deleted file removed from repo"
-    assert_in_config "$HOME/.config/dotfiler/deleted.conf" "~/dotfiler-test/file2.conf" "Deletion tombstoned"
+    assert_in_config "$HOME/.config/dotfiler/deleted.conf" "\$HOME/dotfiler-test/file2.conf" "Deletion tombstoned"
 }
 
 test_delete_command() {
@@ -365,7 +365,7 @@ test_repo_deletion_detection() {
     assert_not_exists "$HOME_TEST_DIR/repo-delete-test.txt" "File removed from filesystem"
     
     # Verify tombstone created
-    assert_in_config "$HOME/.config/dotfiler/deleted.conf" "~/dotfiler-test/repo-delete-test.txt" "Deletion tombstoned"
+    assert_in_config "$HOME/.config/dotfiler/deleted.conf" "\$HOME/dotfiler-test/repo-delete-test.txt" "Deletion tombstoned"
 }
 
 test_repo_first_mode() {
@@ -375,7 +375,7 @@ test_repo_first_mode() {
     echo "repo-first content" > "$REPO_HOME_DIR/dotfiler-test/repo-only.txt"
     
     # Add to tracking (simulate it being tracked on another machine)
-    echo "~/dotfiler-test/repo-only.txt" >> "$HOME/.config/dotfiler/tracked.conf"
+    echo "\$HOME/dotfiler-test/repo-only.txt" >> "$HOME/.config/dotfiler/tracked.conf"
     
     # Run repo-first sync
     dotfiler sync --repo-first > /dev/null

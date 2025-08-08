@@ -40,14 +40,14 @@ normalize_path() {
     fi
 }
 
-# Convert filesystem path to config format (with ~ for HOME paths)
+# Convert filesystem path to config format (with $HOME for HOME paths)
 to_config_path() {
     local path="$1"
     local normalized="$(normalize_path "$path")"
     
-    # If path starts with HOME, replace with ~
+    # If path starts with HOME, replace with $HOME
     if [[ "$normalized" == "$HOME"* ]]; then
-        echo "~${normalized#$HOME}"
+        echo "\$HOME${normalized#$HOME}"
     else
         echo "$normalized"
     fi
@@ -57,8 +57,11 @@ to_config_path() {
 to_repo_path() {
     local path="$1"
     
-    # Expand ~ to HOME for repo storage
-    if [[ "$path" == "~"* ]]; then
+    # Handle $HOME paths
+    if [[ "$path" == "\$HOME"* ]]; then
+        echo "HOME${path#\$HOME}"
+    elif [[ "$path" == "~"* ]]; then
+        # Legacy support for ~ paths
         echo "HOME${path#\~}"
     else
         # Absolute paths stored as-is (minus leading /)
@@ -70,8 +73,11 @@ to_repo_path() {
 to_filesystem_path() {
     local path="$1"
     
-    # Replace ~ with actual HOME
-    if [[ "$path" == "~"* ]]; then
+    # Replace $HOME with actual HOME
+    if [[ "$path" == "\$HOME"* ]]; then
+        echo "${HOME}${path#\$HOME}"
+    elif [[ "$path" == "~"* ]]; then
+        # Legacy support for ~ paths
         echo "${HOME}${path#\~}"
     else
         echo "$path"
@@ -181,8 +187,11 @@ remove_from_tracking() {
     local config_path="$(to_config_path "$path")"
     
     if [[ -f "$TRACKED_ITEMS" ]]; then
-        grep -v "^${config_path}$" "$TRACKED_ITEMS" > "$TRACKED_ITEMS.tmp" || true
-        mv "$TRACKED_ITEMS.tmp" "$TRACKED_ITEMS"
-        log_info "Removed from tracking: $config_path"
+        # Only log if item was actually in the file
+        if grep -q "^${config_path}$" "$TRACKED_ITEMS"; then
+            grep -v "^${config_path}$" "$TRACKED_ITEMS" > "$TRACKED_ITEMS.tmp" || true
+            mv "$TRACKED_ITEMS.tmp" "$TRACKED_ITEMS"
+            log_info "Removed from tracking: $config_path"
+        fi
     fi
 }

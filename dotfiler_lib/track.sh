@@ -52,10 +52,23 @@ sync_single_item() {
     # Ensure parent directory exists in repo
     ensure_dir "$(dirname "$repo_full_path")"
     
+    # Build rsync exclude list from ignored.conf
+    local excludes=""
+    if [[ -f "$IGNORED_ITEMS" ]]; then
+        while IFS= read -r pattern || [[ -n "$pattern" ]]; do
+            [[ -z "$pattern" || "$pattern" == \#* ]] && continue
+            # Check if it's a glob pattern or a specific path
+            if [[ "$pattern" == *"*"* ]]; then
+                # It's a glob pattern, use as-is
+                excludes="$excludes --exclude='$pattern'"
+            fi
+        done < "$IGNORED_ITEMS"
+    fi
+    
     # Use rsync to copy item to repo
     if [[ -d "$fs_path" ]]; then
-        # Directory - sync contents
-        rsync -a --delete "$fs_path/" "$repo_full_path/"
+        # Directory - sync contents with excludes
+        eval rsync -a --delete $excludes "$fs_path/" "$repo_full_path/"
     else
         # File - copy directly
         rsync -a "$fs_path" "$repo_full_path"

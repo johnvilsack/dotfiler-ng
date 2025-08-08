@@ -25,6 +25,10 @@ cmd_delete() {
     echo "$config_path|$timestamp" >> "$DELETED_ITEMS"
     log_info "Added to deletion list: $config_path"
     
+    # Add to ignore list to prevent re-tracking
+    echo "$config_path" >> "$IGNORED_ITEMS"
+    log_info "Added to ignore list: $config_path"
+    
     # Remove from filesystem
     if [[ -e "$fs_path" ]]; then
         rm -rf "$fs_path"
