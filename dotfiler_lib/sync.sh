@@ -45,21 +45,22 @@ sync_normal() {
     log_info "Detecting filesystem deletions..."
     detect_deletions
     
-    # Step 3: Detect deletions from repository
+    # Step 3: Detect deletions from repository (including files in directories)
     log_info "Detecting repository deletions..."
     detect_repo_deletions
+    detect_repo_dir_deletions
     
     # Step 4: Discover new items in repository
     log_info "Discovering new repository items..."
     discover_repo_items
     
-    # Step 5: Filesystem → Repository
-    log_info "Syncing filesystem to repository..."
-    sync_fs_to_repo
-    
-    # Step 6: Repository → Filesystem
+    # Step 5: Repository → Filesystem FIRST (to avoid re-syncing deleted files)
     log_info "Syncing repository to filesystem..."
     sync_repo_to_fs
+    
+    # Step 6: Filesystem → Repository
+    log_info "Syncing filesystem to repository..."
+    sync_fs_to_repo
     
     # Step 7: Cleanup old tombstones
     cleanup_tombstones
@@ -264,6 +265,50 @@ detect_deletions() {
                 
                 # Remove from tracking immediately to prevent re-sync
                 remove_from_tracking "$fs_path"
+            fi
+        fi
+    done < "$TRACKED_ITEMS"
+}
+
+# Detect deletions of files within tracked directories
+detect_repo_dir_deletions() {
+    local timestamp="$(date +%s)"
+    
+    # Only check tracked directories
+    while IFS= read -r item || [[ -n "$item" ]]; do
+        [[ -z "$item" || "$item" == \#* ]] && continue
+        
+        local fs_path="$(to_filesystem_path "$item")"
+        local repo_subpath="$(to_repo_path "$item")"
+        local repo_full_path="$REPO_FILES/$repo_subpath"
+        
+        # Only process if it's a directory
+        if [[ -d "$fs_path" ]] && [[ -d "$repo_full_path" ]]; then
+            # Use rsync dry-run to detect what would be copied FROM filesystem TO repo
+            # These are files that exist in filesystem but not in repo (potential deletions)
+            local would_sync=$(rsync -aun --delete "$fs_path/" "$repo_full_path/" 2>/dev/null | grep -v "^deleting " | grep -v "^$" | grep -v "/$")
+            
+            if [[ -n "$would_sync" ]]; then
+                # Files exist in filesystem but not in repo - they were deleted from repo
+                while IFS= read -r file; do
+                    [[ -z "$file" ]] && continue
+                    local full_fs_path="$fs_path/$file"
+                    local full_config_path="$(to_config_path "$full_fs_path")"
+                    
+                    # Add to deleted.conf
+                    local escaped_path="$(echo "$full_config_path" | sed 's/\$/\\$/g')"
+                    if ! grep -q "^${escaped_path}|" "$DELETED_ITEMS" 2>/dev/null; then
+                        echo "$full_config_path|$timestamp" >> "$DELETED_ITEMS"
+                        log_info "Detected deletion in tracked directory: $full_config_path"
+                        
+                        # Add to ignore list
+                        echo "$full_config_path" >> "$IGNORED_ITEMS"
+                        
+                        # Remove from filesystem
+                        rm -rf "$full_fs_path"
+                        log_info "Removed from filesystem: $full_config_path"
+                    fi
+                done <<< "$would_sync"
             fi
         fi
     done < "$TRACKED_ITEMS"
